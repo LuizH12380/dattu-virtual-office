@@ -1,0 +1,1283 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Escritório Virtual — Dattu</title>
+  <script src="/socket.io/socket.io.js"></script>
+  <style>
+    :root {
+      --bg: #0d0f14;
+      --surface: #161920;
+      --surface2: #1e2130;
+      --border: #2a2f45;
+      --text: #e2e8f0;
+      --text-muted: #64748b;
+      --accent: #6366f1;
+      --accent-glow: rgba(99,102,241,0.15);
+      --green: #22c55e;
+      --yellow: #f59e0b;
+      --red: #ef4444;
+      --blue: #3b82f6;
+      --purple: #a855f7;
+      --pink: #ec4899;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+      font-size: 14px;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* ── Header ────────────────────────────────────────────── */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      height: 56px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      flex-shrink: 0;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      font-size: 16px;
+      letter-spacing: -0.3px;
+    }
+
+    .logo-icon {
+      width: 32px; height: 32px;
+      background: linear-gradient(135deg, var(--accent), var(--purple));
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .status-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 8px var(--green);
+    }
+
+    .status-label { color: var(--text-muted); font-size: 12px; }
+
+    /* ── Layout ────────────────────────────────────────────── */
+    .layout {
+      display: grid;
+      grid-template-columns: 320px 1fr 300px;
+      grid-template-rows: 1fr;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* ── Panels ────────────────────────────────────────────── */
+    .panel {
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .panel:last-child { border-right: none; }
+
+    .panel-header {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      font-weight: 600;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+
+    .panel-header span { color: var(--text); }
+
+    .panel-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+    }
+
+    .panel-body::-webkit-scrollbar { width: 4px; }
+    .panel-body::-webkit-scrollbar-track { background: transparent; }
+    .panel-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    /* ── Agent Cards ───────────────────────────────────────── */
+    .agent-card {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .agent-card:hover {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px var(--accent), 0 4px 20px rgba(0,0,0,0.3);
+    }
+
+    .agent-card.active {
+      border-color: var(--accent);
+      background: linear-gradient(135deg, var(--surface2), var(--accent-glow));
+    }
+
+    .agent-card.working {
+      border-color: var(--yellow);
+      animation: pulse-border 1.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse-border {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(245,158,11,0.4); }
+      50% { box-shadow: 0 0 0 6px rgba(245,158,11,0); }
+    }
+
+    .agent-card-top {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .agent-avatar {
+      width: 42px; height: 42px;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+
+    .agent-info { flex: 1; min-width: 0; }
+
+    .agent-name {
+      font-weight: 700;
+      font-size: 14px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .agent-role {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .agent-status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+    }
+
+    .status-indicator {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .status-indicator.idle { background: var(--text-muted); }
+    .status-indicator.working {
+      background: var(--yellow);
+      box-shadow: 0 0 6px var(--yellow);
+      animation: blink 0.8s ease-in-out infinite;
+    }
+    .status-indicator.done { background: var(--green); box-shadow: 0 0 6px var(--green); }
+    .status-indicator.error { background: var(--red); box-shadow: 0 0 6px var(--red); }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    .agent-last-action {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px solid var(--border);
+      min-height: 18px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* ── Center Panel ──────────────────────────────────────── */
+    .center-panel {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* ── Task Input ────────────────────────────────────────── */
+    .task-input-area {
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      flex-shrink: 0;
+    }
+
+    .task-row {
+      display: flex;
+      gap: 8px;
+      align-items: flex-end;
+    }
+
+    .task-input {
+      flex: 1;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 14px;
+      color: var(--text);
+      font-size: 14px;
+      font-family: inherit;
+      resize: none;
+      min-height: 42px;
+      max-height: 100px;
+      line-height: 1.5;
+      transition: border-color 0.2s;
+      outline: none;
+    }
+
+    .task-input:focus { border-color: var(--accent); }
+    .task-input::placeholder { color: var(--text-muted); }
+
+    .btn {
+      padding: 10px 18px;
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      font-family: inherit;
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: white;
+    }
+    .btn-primary:hover { background: #4f52d6; }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .btn-secondary {
+      background: var(--surface2);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+
+    .task-options {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+      align-items: center;
+    }
+
+    .priority-select {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 7px;
+      padding: 5px 10px;
+      font-size: 12px;
+      font-family: inherit;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .quick-actions {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .quick-btn {
+      padding: 4px 10px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 11px;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.15s;
+    }
+
+    .quick-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* ── Activity Feed ─────────────────────────────────────── */
+    .feed-area {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+    }
+
+    .feed-area::-webkit-scrollbar { width: 4px; }
+    .feed-area::-webkit-scrollbar-track { background: transparent; }
+    .feed-area::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    .feed-entry {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 10px;
+      animation: slide-in 0.2s ease-out;
+    }
+
+    @keyframes slide-in {
+      from { opacity: 0; transform: translateY(-8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .feed-icon {
+      width: 28px; height: 28px;
+      border-radius: 7px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .feed-icon.info { background: rgba(59,130,246,0.15); }
+    .feed-icon.success { background: rgba(34,197,94,0.15); }
+    .feed-icon.error { background: rgba(239,68,68,0.15); }
+    .feed-icon.working { background: rgba(245,158,11,0.15); }
+    .feed-icon.note { background: rgba(168,85,247,0.15); }
+
+    .feed-content { flex: 1; min-width: 0; }
+
+    .feed-message {
+      color: var(--text);
+      line-height: 1.5;
+      word-break: break-word;
+    }
+
+    .feed-time {
+      font-size: 10px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* ── Result Card ───────────────────────────────────────── */
+    .result-card {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--green);
+      border-radius: 10px;
+      padding: 14px;
+      margin-bottom: 10px;
+      animation: slide-in 0.3s ease-out;
+    }
+
+    .result-card h4 {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--green);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .result-card p {
+      font-size: 13px;
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    .result-tags {
+      display: flex;
+      gap: 6px;
+      margin-top: 8px;
+      flex-wrap: wrap;
+    }
+
+    .tag {
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .tag-agent { background: rgba(99,102,241,0.15); color: var(--accent); }
+    .tag-note { background: rgba(168,85,247,0.15); color: var(--purple); }
+
+    /* ── Chat Panel ────────────────────────────────────────── */
+    .chat-panel {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .agent-selector {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      flex-shrink: 0;
+    }
+
+    .agent-chip {
+      padding: 5px 12px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.15s;
+    }
+
+    .agent-chip.selected {
+      border-color: var(--accent);
+      background: var(--accent-glow);
+      color: var(--accent);
+    }
+
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px;
+    }
+
+    .chat-messages::-webkit-scrollbar { width: 4px; }
+    .chat-messages::-webkit-scrollbar-track { background: transparent; }
+    .chat-messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    .chat-message {
+      margin-bottom: 12px;
+      animation: slide-in 0.2s ease-out;
+    }
+
+    .chat-message.user .msg-bubble {
+      background: var(--accent);
+      color: white;
+      margin-left: 24px;
+    }
+
+    .chat-message.agent .msg-bubble {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      margin-right: 24px;
+    }
+
+    .msg-sender {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .msg-bubble {
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 13px;
+      line-height: 1.6;
+      word-break: break-word;
+    }
+
+    .typing-indicator {
+      display: flex;
+      gap: 4px;
+      padding: 10px 12px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-right: 24px;
+      width: fit-content;
+      margin-bottom: 12px;
+    }
+
+    .typing-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--text-muted);
+      animation: typing 1.2s ease-in-out infinite;
+    }
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes typing {
+      0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+      30% { transform: translateY(-4px); opacity: 1; }
+    }
+
+    .chat-input-row {
+      padding: 12px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .chat-input {
+      flex: 1;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 12px;
+      color: var(--text);
+      font-size: 13px;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .chat-input:focus { border-color: var(--accent); }
+    .chat-input::placeholder { color: var(--text-muted); }
+
+    .btn-send {
+      padding: 8px 14px;
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background 0.15s;
+    }
+    .btn-send:hover { background: #4f52d6; }
+    .btn-send:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* ── Vault Stats ───────────────────────────────────────── */
+    .vault-stats {
+      padding: 0 16px 16px;
+    }
+
+    .vault-stat-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .vault-stat {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.15s;
+    }
+
+    .vault-stat:hover { border-color: var(--accent); }
+
+    .vault-stat-num {
+      font-size: 22px;
+      font-weight: 800;
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+
+    .vault-stat-label {
+      font-size: 10px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* ── Empty state ───────────────────────────────────────── */
+    .empty-feed {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      color: var(--text-muted);
+      text-align: center;
+      gap: 10px;
+    }
+
+    .empty-feed-icon { font-size: 40px; opacity: 0.3; }
+    .empty-feed-text { font-size: 13px; }
+
+    /* ── Progress bar ──────────────────────────────────────── */
+    .progress-bar {
+      height: 3px;
+      background: var(--border);
+      border-radius: 2px;
+      overflow: hidden;
+      margin-top: 8px;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--purple));
+      border-radius: 2px;
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+
+    /* ── Responsive tweaks ─────────────────────────────────── */
+    @media (max-width: 1024px) {
+      .layout { grid-template-columns: 260px 1fr; }
+      .chat-panel { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Header ──────────────────────────────────────────────────────────── -->
+<header>
+  <div class="logo">
+    <div class="logo-icon">🏢</div>
+    <span id="company-name">Escritório Virtual</span>
+  </div>
+  <div class="header-right">
+    <div class="status-dot" id="conn-dot"></div>
+    <span class="status-label" id="conn-label">Conectando...</span>
+  </div>
+</header>
+
+<!-- ── Main Layout ──────────────────────────────────────────────────────── -->
+<div class="layout">
+
+  <!-- ── Coluna 1: Agentes ───────────────────────────────────────────── -->
+  <div class="panel">
+    <div class="panel-header">
+      <span>Agentes</span>
+      <span id="active-count">0 ativos</span>
+    </div>
+    <div class="panel-body" id="agents-panel">
+      <!-- preenchido por JS -->
+    </div>
+  </div>
+
+  <!-- ── Coluna 2: Centro (Task + Feed) ──────────────────────────────── -->
+  <div class="center-panel">
+
+    <div class="task-input-area">
+      <div class="task-row">
+        <textarea
+          id="task-input"
+          class="task-input"
+          placeholder="Descreva uma tarefa para o escritório... ex: Contratar desenvolvedor backend"
+          rows="1"
+        ></textarea>
+        <button class="btn btn-primary" id="btn-send-task" onclick="sendTask()">
+          ▶ Executar
+        </button>
+        <button class="btn btn-secondary" onclick="openMeetingModal()">
+          🤝 Reunião
+        </button>
+      </div>
+      <div class="task-options">
+        <select class="priority-select" id="priority-select">
+          <option value="low">Baixa</option>
+          <option value="medium" selected>Média</option>
+          <option value="high">Alta</option>
+          <option value="urgent">Urgente</option>
+        </select>
+        <div class="quick-actions">
+          <button class="quick-btn" onclick="quickTask('Contratar desenvolvedor fullstack sênior')">+ Contratar</button>
+          <button class="quick-btn" onclick="quickTask('Criar campanha de lançamento do produto')">+ Campanha</button>
+          <button class="quick-btn" onclick="quickTask('Tomar decisão sobre arquitetura do sistema')">+ Decisão</button>
+          <button class="quick-btn" onclick="quickTask('Criar pauta para reunião de planejamento')">+ Pauta</button>
+        </div>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+    </div>
+
+    <div class="feed-area" id="feed">
+      <div class="empty-feed" id="empty-feed">
+        <div class="empty-feed-icon">🤖</div>
+        <div class="empty-feed-text">Envie uma tarefa para o escritório começar a trabalhar</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── Coluna 3: Chat + Vault ───────────────────────────────────────── -->
+  <div class="panel chat-panel">
+    <div class="panel-header">
+      <span>Chat com Agente</span>
+    </div>
+    <div class="agent-selector" id="agent-selector">
+      <!-- chips preenchidos por JS -->
+    </div>
+    <div class="chat-messages" id="chat-messages">
+      <div style="color: var(--text-muted); font-size: 12px; text-align: center; padding: 20px;">
+        Selecione um agente para conversar
+      </div>
+    </div>
+    <div class="chat-input-row">
+      <input
+        type="text"
+        class="chat-input"
+        id="chat-input"
+        placeholder="Mensagem..."
+        onkeydown="handleChatKey(event)"
+      />
+      <button class="btn-send" onclick="sendChatMessage()">➤</button>
+    </div>
+
+    <div class="panel-header" style="margin-top: 0; border-top: 1px solid var(--border);">
+      <span>Vault — Rede Neural</span>
+    </div>
+    <div class="vault-stats" id="vault-stats-area">
+      <div class="vault-stat-grid" id="vault-grid">
+        <!-- preenchido por JS -->
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── Meeting Modal ────────────────────────────────────────────────────── -->
+<div id="meeting-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:100; display:none; align-items:center; justify-content:center;">
+  <div style="background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:28px; width:400px; max-width:90vw;">
+    <h3 style="margin-bottom:16px; font-size:16px;">🤝 Iniciar Reunião</h3>
+    <input
+      id="meeting-topic"
+      type="text"
+      placeholder="Tema da reunião..."
+      style="width:100%; background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:10px 14px; color:var(--text); font-size:14px; font-family:inherit; outline:none; margin-bottom:12px;"
+    />
+    <p style="font-size:12px; color:var(--text-muted); margin-bottom:16px;">
+      Participantes: Estratégia, RH e Criativo
+    </p>
+    <div style="display:flex; gap:8px; justify-content:flex-end;">
+      <button class="btn btn-secondary" onclick="closeMeetingModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="startMeeting()">Iniciar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ── Config ────────────────────────────────────────────────────────────────
+  const AGENT_META = {
+    hr:        { emoji: '👔', name: 'Agente RH',         role: 'Recursos Humanos',  color: '#22c55e' },
+    creative:  { emoji: '🎨', name: 'Agente Criativo',   role: 'Design & Conteúdo', color: '#ec4899' },
+    strategy:  { emoji: '♟️', name: 'Agente Estratégia', role: 'Estratégia',         color: '#6366f1' },
+    meetings:  { emoji: '📋', name: 'Agente Reuniões',   role: 'Facilitação',        color: '#f59e0b' },
+    documents: { emoji: '📚', name: 'Agente Documentos', role: 'Conhecimento',       color: '#3b82f6' },
+  };
+
+  const VAULT_FOLDER_META = {
+    Decisoes:  { emoji: '⚡', label: 'Decisões' },
+    Time:      { emoji: '👥', label: 'Time' },
+    Reunioes:  { emoji: '📋', label: 'Reuniões' },
+    Criativos: { emoji: '🎨', label: 'Criativos' },
+    Processos: { emoji: '⚙️', label: 'Processos' },
+    Ideias:    { emoji: '💡', label: 'Ideias' },
+  };
+
+  // ── State ─────────────────────────────────────────────────────────────────
+  let agentStatuses = {};
+  let selectedChatAgent = null;
+  let isProcessing = false;
+
+  // ── Socket.IO ─────────────────────────────────────────────────────────────
+  const socket = io();
+
+  socket.on('connect', () => {
+    setConnected(true);
+  });
+
+  socket.on('disconnect', () => {
+    setConnected(false);
+  });
+
+  socket.on('agents:list', (agents) => {
+    renderAgentCards(agents);
+    renderAgentChips(agents);
+  });
+
+  socket.on('vault:stats', (stats) => {
+    renderVaultStats(stats);
+  });
+
+  socket.on('log', (data) => {
+    addFeedEntry(data.level, data.message, data.timestamp);
+  });
+
+  socket.on('task:start', (data) => {
+    setProcessing(true);
+    addFeedEntry('working', `Nova tarefa: "${data.task}"`, null, '🚀');
+  });
+
+  socket.on('task:routed', (data) => {
+    addFeedEntry('info', `Roteando para: ${data.agents.map(r => AGENT_META[r]?.name ?? r).join(', ')}`, null, '🔀');
+  });
+
+  socket.on('agent:start', (data) => {
+    updateAgentStatus(data.role, 'working');
+    addFeedEntry('working', `${AGENT_META[data.role]?.emoji ?? '🤖'} ${AGENT_META[data.role]?.name ?? data.name} está trabalhando...`, null, AGENT_META[data.role]?.emoji ?? '🤖');
+  });
+
+  socket.on('agent:done', (data) => {
+    updateAgentStatus(data.role, 'done');
+    updateAgentLastAction(data.role, 'Tarefa concluída');
+    addFeedEntry('success', `${AGENT_META[data.role]?.name ?? data.name} concluiu.`, null, '✅');
+  });
+
+  socket.on('agent:error', (data) => {
+    updateAgentStatus(data.role, 'error');
+    addFeedEntry('error', `Erro em ${data.name}: ${data.error}`, null, '❌');
+  });
+
+  socket.on('task:done', (data) => {
+    setProcessing(false);
+    resetAgentStatuses(data.agentsInvolved);
+    showResult(data);
+  });
+
+  socket.on('note:created', (data) => {
+    addFeedEntry('note', `Nota salva no vault: ${data.path}`, null, '📝');
+  });
+
+  socket.on('agent:typing', (data) => {
+    showTypingIndicator(data.role);
+  });
+
+  socket.on('chat:response', (data) => {
+    hideTypingIndicator();
+    addChatMessage('agent', data.role, data.message);
+    enableChatInput();
+  });
+
+  socket.on('error', (data) => {
+    setProcessing(false);
+    addFeedEntry('error', data.message, null, '❌');
+  });
+
+  // ── Render functions ──────────────────────────────────────────────────────
+
+  function renderAgentCards(agents) {
+    const panel = document.getElementById('agents-panel');
+    panel.innerHTML = '';
+
+    const roles = agents.length > 0
+      ? agents.map(a => a.role)
+      : Object.keys(AGENT_META);
+
+    for (const role of roles) {
+      const meta = AGENT_META[role] ?? { emoji: '🤖', name: role, role: role, color: '#64748b' };
+      agentStatuses[role] = 'idle';
+
+      panel.innerHTML += `
+        <div class="agent-card" id="card-${role}" onclick="selectChatAgent('${role}')">
+          <div class="agent-card-top">
+            <div class="agent-avatar" style="background: ${meta.color}22; border: 1px solid ${meta.color}44;">
+              ${meta.emoji}
+            </div>
+            <div class="agent-info">
+              <div class="agent-name">${meta.name}</div>
+              <div class="agent-role">${meta.role}</div>
+            </div>
+          </div>
+          <div class="agent-status">
+            <div class="status-indicator idle" id="indicator-${role}"></div>
+            <span id="status-text-${role}" style="color: var(--text-muted);">Disponível</span>
+          </div>
+          <div class="agent-last-action" id="last-action-${role}">Aguardando tarefa...</div>
+        </div>
+      `;
+    }
+  }
+
+  function renderAgentChips(agents) {
+    const selector = document.getElementById('agent-selector');
+    selector.innerHTML = '';
+
+    const roles = agents.length > 0
+      ? agents.map(a => a.role)
+      : Object.keys(AGENT_META);
+
+    for (const role of roles) {
+      const meta = AGENT_META[role] ?? { emoji: '🤖', name: role };
+      selector.innerHTML += `
+        <button class="agent-chip" id="chip-${role}" onclick="selectChatAgent('${role}')">
+          ${meta.emoji} ${meta.name.replace('Agente ', '')}
+        </button>
+      `;
+    }
+  }
+
+  function renderVaultStats(stats) {
+    const grid = document.getElementById('vault-grid');
+    grid.innerHTML = '';
+
+    for (const [folder, count] of Object.entries(stats)) {
+      const meta = VAULT_FOLDER_META[folder] ?? { emoji: '📁', label: folder };
+      const colors = ['#6366f1','#22c55e','#f59e0b','#ec4899','#3b82f6','#a855f7'];
+      const color = colors[Object.keys(stats).indexOf(folder) % colors.length];
+      grid.innerHTML += `
+        <div class="vault-stat" onclick="loadVaultFolder('${folder}')">
+          <div class="vault-stat-num" style="color:${color}">${count}</div>
+          <div class="vault-stat-label">${meta.emoji} ${meta.label}</div>
+        </div>
+      `;
+    }
+  }
+
+  // ── Agent status ──────────────────────────────────────────────────────────
+
+  function updateAgentStatus(role, status) {
+    agentStatuses[role] = status;
+
+    const card = document.getElementById(`card-${role}`);
+    const indicator = document.getElementById(`indicator-${role}`);
+    const statusText = document.getElementById(`status-text-${role}`);
+
+    if (!card || !indicator) return;
+
+    card.className = 'agent-card';
+    indicator.className = `status-indicator ${status}`;
+
+    const labels = { idle: 'Disponível', working: 'Trabalhando...', done: 'Concluído', error: 'Erro' };
+    const colors = { idle: 'var(--text-muted)', working: 'var(--yellow)', done: 'var(--green)', error: 'var(--red)' };
+
+    if (statusText) {
+      statusText.textContent = labels[status] ?? status;
+      statusText.style.color = colors[status] ?? 'var(--text-muted)';
+    }
+
+    if (status === 'working') card.classList.add('working');
+    if (status === 'done') card.classList.add('active');
+
+    // Atualiza contador
+    const workingCount = Object.values(agentStatuses).filter(s => s === 'working').length;
+    document.getElementById('active-count').textContent = workingCount > 0
+      ? `${workingCount} trabalhando`
+      : '0 ativos';
+  }
+
+  function updateAgentLastAction(role, text) {
+    const el = document.getElementById(`last-action-${role}`);
+    if (el) el.textContent = text;
+  }
+
+  function resetAgentStatuses(roles) {
+    setTimeout(() => {
+      (roles ?? Object.keys(agentStatuses)).forEach(role => {
+        updateAgentStatus(role, 'idle');
+      });
+    }, 3000);
+  }
+
+  // ── Feed ──────────────────────────────────────────────────────────────────
+
+  function addFeedEntry(level, message, timestamp, icon) {
+    const feed = document.getElementById('feed');
+    const emptyFeed = document.getElementById('empty-feed');
+    if (emptyFeed) emptyFeed.remove();
+
+    const iconMap = {
+      info: '💬', success: '✅', error: '❌', working: '⚙️', note: '📝'
+    };
+
+    const time = timestamp
+      ? new Date(timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+      : new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+    const entry = document.createElement('div');
+    entry.className = 'feed-entry';
+    entry.innerHTML = `
+      <div class="feed-icon ${level}">${icon ?? iconMap[level] ?? '•'}</div>
+      <div class="feed-content">
+        <div class="feed-message">${escHtml(message)}</div>
+        <div class="feed-time">${time}</div>
+      </div>
+    `;
+
+    feed.appendChild(entry);
+    feed.scrollTop = feed.scrollHeight;
+  }
+
+  function showResult(data) {
+    const feed = document.getElementById('feed');
+
+    const card = document.createElement('div');
+    card.className = 'result-card';
+
+    const tagsHtml = [
+      ...data.agentsInvolved.map(r => `<span class="tag tag-agent">${AGENT_META[r]?.emoji ?? ''} ${AGENT_META[r]?.name ?? r}</span>`),
+      `<span class="tag tag-note">📝 ${data.notesCreated.length} nota(s)</span>`,
+    ].join('');
+
+    const nextStepsHtml = data.nextSteps?.length > 0
+      ? `<div style="margin-top:8px; font-size:12px; color:var(--text-muted);">
+           <strong style="color:var(--text);">Próximos passos:</strong>
+           ${data.nextSteps.map(s => `<div>• ${escHtml(s)}</div>`).join('')}
+         </div>`
+      : '';
+
+    card.innerHTML = `
+      <h4>✅ Tarefa Concluída — ${data.taskId.slice(0, 8)}</h4>
+      <p>${escHtml(data.summary)}</p>
+      ${nextStepsHtml}
+      <div class="result-tags">${tagsHtml}</div>
+    `;
+
+    feed.appendChild(card);
+    feed.scrollTop = feed.scrollHeight;
+  }
+
+  // ── Chat ──────────────────────────────────────────────────────────────────
+
+  function selectChatAgent(role) {
+    selectedChatAgent = role;
+
+    document.querySelectorAll('.agent-chip').forEach(c => c.classList.remove('selected'));
+    document.querySelectorAll('.agent-card').forEach(c => c.classList.remove('active'));
+
+    const chip = document.getElementById(`chip-${role}`);
+    const card = document.getElementById(`card-${role}`);
+    if (chip) chip.classList.add('selected');
+    if (card) card.classList.add('active');
+
+    const meta = AGENT_META[role] ?? { name: role };
+    const messages = document.getElementById('chat-messages');
+    messages.innerHTML = `
+      <div style="text-align:center; padding:16px; color:var(--text-muted); font-size:12px;">
+        ${meta.emoji ?? '🤖'} Conversando com <strong style="color:var(--text)">${meta.name}</strong>
+      </div>
+    `;
+    document.getElementById('chat-input').focus();
+  }
+
+  function sendChatMessage() {
+    const input = document.getElementById('chat-input');
+    const message = input.value.trim();
+
+    if (!message || !selectedChatAgent) return;
+
+    addChatMessage('user', 'Você', message);
+    input.value = '';
+    input.disabled = true;
+    document.querySelector('.btn-send').disabled = true;
+
+    socket.emit('chat:message', {
+      role: selectedChatAgent,
+      message,
+      sessionId: socket.id,
+    });
+  }
+
+  function addChatMessage(type, sender, text) {
+    const messages = document.getElementById('chat-messages');
+    const meta = type === 'agent' ? (AGENT_META[sender] ?? { name: sender, emoji: '🤖' }) : null;
+
+    const div = document.createElement('div');
+    div.className = `chat-message ${type}`;
+    div.innerHTML = `
+      <div class="msg-sender">${type === 'agent' ? (meta?.emoji + ' ' + meta?.name) : sender}</div>
+      <div class="msg-bubble">${escHtml(text)}</div>
+    `;
+    messages.appendChild(div);
+    messages.scrollTop = messages.scrollHeight;
+  }
+
+  function showTypingIndicator() {
+    const messages = document.getElementById('chat-messages');
+    const existing = document.getElementById('typing-indicator');
+    if (existing) return;
+
+    const div = document.createElement('div');
+    div.id = 'typing-indicator';
+    div.className = 'typing-indicator';
+    div.innerHTML = '<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>';
+    messages.appendChild(div);
+    messages.scrollTop = messages.scrollHeight;
+  }
+
+  function hideTypingIndicator() {
+    const el = document.getElementById('typing-indicator');
+    if (el) el.remove();
+  }
+
+  function enableChatInput() {
+    document.getElementById('chat-input').disabled = false;
+    document.querySelector('.btn-send').disabled = false;
+    document.getElementById('chat-input').focus();
+  }
+
+  function handleChatKey(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendChatMessage();
+    }
+  }
+
+  // ── Tasks ─────────────────────────────────────────────────────────────────
+
+  function sendTask() {
+    const input = document.getElementById('task-input');
+    const task = input.value.trim();
+    if (!task || isProcessing) return;
+
+    const priority = document.getElementById('priority-select').value;
+    socket.emit('task:submit', { task, priority });
+    input.value = '';
+  }
+
+  function quickTask(task) {
+    document.getElementById('task-input').value = task;
+    sendTask();
+  }
+
+  function setProcessing(processing) {
+    isProcessing = processing;
+    const btn = document.getElementById('btn-send-task');
+    const fill = document.getElementById('progress-fill');
+
+    btn.disabled = processing;
+    btn.textContent = processing ? '⏳ Processando...' : '▶ Executar';
+    fill.style.width = processing ? '100%' : '0%';
+    fill.style.transition = processing ? 'width 30s linear' : 'width 0.3s';
+  }
+
+  // ── Meeting modal ─────────────────────────────────────────────────────────
+
+  function openMeetingModal() {
+    document.getElementById('meeting-modal').style.display = 'flex';
+    document.getElementById('meeting-topic').focus();
+  }
+
+  function closeMeetingModal() {
+    document.getElementById('meeting-modal').style.display = 'none';
+  }
+
+  function startMeeting() {
+    const topic = document.getElementById('meeting-topic').value.trim();
+    if (!topic) return;
+
+    socket.emit('meeting:start', { topic });
+    closeMeetingModal();
+    document.getElementById('meeting-topic').value = '';
+  }
+
+  // ── Connection ────────────────────────────────────────────────────────────
+
+  function setConnected(connected) {
+    const dot = document.getElementById('conn-dot');
+    const label = document.getElementById('conn-label');
+    dot.style.background = connected ? 'var(--green)' : 'var(--red)';
+    dot.style.boxShadow = connected ? '0 0 8px var(--green)' : '0 0 8px var(--red)';
+    label.textContent = connected ? 'Online' : 'Desconectado';
+  }
+
+  // ── Vault folder view ─────────────────────────────────────────────────────
+
+  async function loadVaultFolder(folder) {
+    const res = await fetch(`/api/vault/notes/${folder}`);
+    const notes = await res.json();
+
+    const feed = document.getElementById('feed');
+    const meta = VAULT_FOLDER_META[folder] ?? { emoji: '📁', label: folder };
+
+    const card = document.createElement('div');
+    card.className = 'result-card';
+    card.style.borderLeftColor = 'var(--accent)';
+
+    const notesHtml = notes.length === 0
+      ? '<p style="color:var(--text-muted)">Nenhuma nota ainda.</p>'
+      : notes.map(n => `
+          <div style="padding:6px 0; border-bottom:1px solid var(--border);">
+            <div style="font-size:12px; font-weight:600;">📄 ${escHtml(n.filename.replace('.md',''))}</div>
+            <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">${escHtml(n.preview)}...</div>
+          </div>
+        `).join('');
+
+    card.innerHTML = `
+      <h4>${meta.emoji} ${meta.label} — ${notes.length} nota(s)</h4>
+      ${notesHtml}
+    `;
+
+    feed.appendChild(card);
+    feed.scrollTop = feed.scrollHeight;
+  }
+
+  // ── Utils ─────────────────────────────────────────────────────────────────
+
+  function escHtml(str) {
+    return String(str ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  // ── Init ──────────────────────────────────────────────────────────────────
+
+  document.addEventListener('DOMContentLoaded', () => {
+    // Título com nome da empresa
+    fetch('/api/agents').then(r => r.json()).then(agents => {
+      renderAgentCards(agents);
+      renderAgentChips(agents);
+    });
+
+    fetch('/api/vault/stats').then(r => r.json()).then(stats => {
+      renderVaultStats(stats);
+    });
+
+    // Enter no task input
+    document.getElementById('task-input').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendTask();
+      }
+    });
+
+    // Enter no meeting topic
+    document.getElementById('meeting-topic').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') startMeeting();
+    });
+
+    // Fechar modal com ESC
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeMeetingModal();
+    });
+
+    // Auto-resize textarea
+    const textarea = document.getElementById('task-input');
+    textarea.addEventListener('input', () => {
+      textarea.style.height = 'auto';
+      textarea.style.height = Math.min(textarea.scrollHeight, 100) + 'px';
+    });
+  });
+</script>
+
+</body>
+</html>
