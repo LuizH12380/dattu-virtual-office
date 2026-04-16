@@ -27,7 +27,7 @@ export class ObsidianService {
   }
 
   listNotes(folder: string): VaultNote[] {
-    const folderPath = this.resolvePath(folder);
+    const folderPath = path.join(this.vaultPath, folder);
     if (!fs.existsSync(folderPath)) return [];
 
     const files = fs
