@@ -1,0 +1,70 @@
+---
+criado: 2026-04-16
+atualizado: 2026-04-16
+tipo: tarefa-orquestrada
+agentes: hr
+prioridade: urgent
+---
+
+# Tarefa Orquestrada
+
+**ID:** 05b5ee41-9d83-448e-ae0e-6418db495a24
+**Data:** 16/04/2026
+**Solicitação:** /time
+**Agentes:** hr
+**Raciocínio:** O comando '/time' refere-se à visualização ou gestão do time/equipe, o que é responsabilidade do agente de Recursos Humanos (hr), que cuida de informações sobre membros da equipe, estrutura organizacional e cultura.
+
+## Resumo
+# 👥 Reunião de Time — Dattu
+**Data:** quinta-feira, 16 de abril de 2026
+
+---
+
+Não encontrei nenhum colaborador registrado no vault ainda.
+
+Para que eu possa conduzir a reunião de time, preciso primeiro ter o time cadastrado.
+
+---
+
+## O que você gostaria de fazer?
+
+**1. Contratar alguém agora**
+Me informe nome, cargo e contexto da contratação.
+
+**2. Importar time existente**
+Me passe a lista de colaboradores atuais (nome, cargo, data de entrada) e eu registro todos.
+
+**3. Reunião com time informal**
+Se quiser discutir o time mesmo sem registros formais, me conte quem são as pessoas e o que está acontecendo.
+
+---
+
+> 💡 **Dica:** Assim que tivermos ao menos um colaborador registrado, as reuniões de time passam a incluir pontos de atenção individuais, sugestões de desenvolvimento e histórico 
+
+## Resultados por Agente
+## Agente RH
+# 👥 Reunião de Time — Dattu
+**Data:** quinta-feira, 16 de abril de 2026
+
+---
+
+Não encontrei nenhum colaborador registrado no vault ainda.
+
+Para que eu possa conduzir a reunião de time, preciso primeiro ter o time cadastrado.
+
+---
+
+## O que você gostaria de fazer?
+
+**1. Contratar alguém agora**
+Me informe nome, cargo e contexto da contratação.
+
+**2. Importar time existente**
+Me passe a lista de colaboradores atuais (nome, cargo, data de entrada) e eu registro todos.
+
+**3. Reunião com time informal**
+Se quiser discutir o time mesmo sem registros formais, me conte quem são as pessoas e o que está acontecendo.
+
+---
+
+> 💡 **Dica:** Assim que tivermos ao menos um colaborador registrado, as reuniões de time passam a incluir pontos de atenção individuais, sugestões de desenvolvimento e histórico de evolução.

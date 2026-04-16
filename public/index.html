@@ -3,24 +3,29 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Escritório Virtual — Dattu</title>
+  <title>Dattu — Escritório Virtual</title>
   <script src="/socket.io/socket.io.js"></script>
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
     :root {
-      --bg: #0d0f14;
-      --surface: #161920;
-      --surface2: #1e2130;
-      --border: #2a2f45;
-      --text: #e2e8f0;
-      --text-muted: #64748b;
-      --accent: #6366f1;
-      --accent-glow: rgba(99,102,241,0.15);
-      --green: #22c55e;
-      --yellow: #f59e0b;
-      --red: #ef4444;
-      --blue: #3b82f6;
-      --purple: #a855f7;
-      --pink: #ec4899;
+      --bg: #1a1025;
+      --surface: #221832;
+      --surface2: #2c2042;
+      --border: #3a2d55;
+      --text: #e8e0f0;
+      --text-muted: #8878a0;
+      --accent: #7c6ff7;
+      --green: #4ade80;
+      --yellow: #fbbf24;
+      --red: #f87171;
+      --blue: #60a5fa;
+      --purple: #c084fc;
+      --pink: #f472b6;
+      --floor1: #5c4a32;
+      --floor2: #4e3e28;
+      --wall-top: #3d2d4a;
+      --wall-side: #2e1f3a;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -28,1255 +33,1144 @@
     body {
       background: var(--bg);
       color: var(--text);
-      font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
-      font-size: 14px;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      font-size: 13px;
       height: 100vh;
       display: flex;
       flex-direction: column;
       overflow: hidden;
     }
 
-    /* ── Header ────────────────────────────────────────────── */
+    .pixel-font { font-family: 'Press Start 2P', monospace; }
+
+    /* ═══ Header ═══ */
     header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 24px;
-      height: 56px;
-      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 16px; height: 46px;
       background: var(--surface);
-      flex-shrink: 0;
+      border-bottom: 2px solid var(--border);
+      flex-shrink: 0; z-index: 20;
     }
-
-    .logo {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-weight: 700;
-      font-size: 16px;
-      letter-spacing: -0.3px;
-    }
-
-    .logo-icon {
-      width: 32px; height: 32px;
-      background: linear-gradient(135deg, var(--accent), var(--purple));
-      border-radius: 8px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 16px;
-    }
-
-    .header-right {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-    }
-
-    .status-dot {
-      width: 8px; height: 8px;
-      border-radius: 50%;
-      background: var(--green);
-      box-shadow: 0 0 8px var(--green);
-    }
-
-    .status-label { color: var(--text-muted); font-size: 12px; }
-
-    /* ── Layout ────────────────────────────────────────────── */
-    .layout {
-      display: grid;
-      grid-template-columns: 320px 1fr 300px;
-      grid-template-rows: 1fr;
-      flex: 1;
-      overflow: hidden;
-    }
-
-    /* ── Panels ────────────────────────────────────────────── */
-    .panel {
-      border-right: 1px solid var(--border);
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
-
-    .panel:last-child { border-right: none; }
-
-    .panel-header {
-      padding: 14px 18px;
-      border-bottom: 1px solid var(--border);
-      font-weight: 600;
-      font-size: 12px;
-      text-transform: uppercase;
-      letter-spacing: 0.8px;
-      color: var(--text-muted);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-shrink: 0;
-    }
-
-    .panel-header span { color: var(--text); }
-
-    .panel-body {
-      flex: 1;
-      overflow-y: auto;
-      padding: 16px;
-    }
-
-    .panel-body::-webkit-scrollbar { width: 4px; }
-    .panel-body::-webkit-scrollbar-track { background: transparent; }
-    .panel-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-
-    /* ── Agent Cards ───────────────────────────────────────── */
-    .agent-card {
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 16px;
-      margin-bottom: 12px;
-      cursor: pointer;
-      transition: all 0.2s;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .agent-card:hover {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 1px var(--accent), 0 4px 20px rgba(0,0,0,0.3);
-    }
-
-    .agent-card.active {
-      border-color: var(--accent);
-      background: linear-gradient(135deg, var(--surface2), var(--accent-glow));
-    }
-
-    .agent-card.working {
-      border-color: var(--yellow);
-      animation: pulse-border 1.5s ease-in-out infinite;
-    }
-
-    @keyframes pulse-border {
-      0%, 100% { box-shadow: 0 0 0 0 rgba(245,158,11,0.4); }
-      50% { box-shadow: 0 0 0 6px rgba(245,158,11,0); }
-    }
-
-    .agent-card-top {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 10px;
-    }
-
-    .agent-avatar {
-      width: 42px; height: 42px;
-      border-radius: 10px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 20px;
-      flex-shrink: 0;
-    }
-
-    .agent-info { flex: 1; min-width: 0; }
-
-    .agent-name {
-      font-weight: 700;
-      font-size: 14px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .agent-role {
-      font-size: 11px;
-      color: var(--text-muted);
-      margin-top: 2px;
-    }
-
-    .agent-status {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 11px;
-    }
-
-    .status-indicator {
-      width: 7px; height: 7px;
-      border-radius: 50%;
-      flex-shrink: 0;
-    }
-
-    .status-indicator.idle { background: var(--text-muted); }
-    .status-indicator.working {
-      background: var(--yellow);
-      box-shadow: 0 0 6px var(--yellow);
-      animation: blink 0.8s ease-in-out infinite;
-    }
-    .status-indicator.done { background: var(--green); box-shadow: 0 0 6px var(--green); }
-    .status-indicator.error { background: var(--red); box-shadow: 0 0 6px var(--red); }
-
-    @keyframes blink {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.3; }
-    }
-
-    .agent-last-action {
-      font-size: 11px;
-      color: var(--text-muted);
-      margin-top: 8px;
-      padding-top: 8px;
-      border-top: 1px solid var(--border);
-      min-height: 18px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    /* ── Center Panel ──────────────────────────────────────── */
-    .center-panel {
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
-
-    /* ── Task Input ────────────────────────────────────────── */
-    .task-input-area {
-      padding: 16px;
-      border-bottom: 1px solid var(--border);
-      background: var(--surface);
-      flex-shrink: 0;
-    }
-
-    .task-row {
-      display: flex;
-      gap: 8px;
-      align-items: flex-end;
-    }
-
-    .task-input {
-      flex: 1;
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 10px 14px;
-      color: var(--text);
-      font-size: 14px;
-      font-family: inherit;
-      resize: none;
-      min-height: 42px;
-      max-height: 100px;
-      line-height: 1.5;
-      transition: border-color 0.2s;
-      outline: none;
-    }
-
-    .task-input:focus { border-color: var(--accent); }
-    .task-input::placeholder { color: var(--text-muted); }
-
-    .btn {
-      padding: 10px 18px;
-      border-radius: 10px;
-      border: none;
-      cursor: pointer;
-      font-size: 13px;
-      font-weight: 600;
-      font-family: inherit;
-      transition: all 0.15s;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      white-space: nowrap;
-    }
-
-    .btn-primary {
-      background: var(--accent);
-      color: white;
-    }
-    .btn-primary:hover { background: #4f52d6; }
-    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
-
-    .btn-secondary {
-      background: var(--surface2);
-      color: var(--text);
-      border: 1px solid var(--border);
-    }
-    .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
-
-    .task-options {
-      display: flex;
-      gap: 8px;
-      margin-top: 8px;
-      align-items: center;
-    }
-
-    .priority-select {
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      color: var(--text);
-      border-radius: 7px;
-      padding: 5px 10px;
-      font-size: 12px;
-      font-family: inherit;
-      outline: none;
-      cursor: pointer;
-    }
-
-    .quick-actions {
-      display: flex;
-      gap: 6px;
-      flex-wrap: wrap;
-    }
-
-    .quick-btn {
-      padding: 4px 10px;
-      border-radius: 20px;
-      border: 1px solid var(--border);
-      background: transparent;
-      color: var(--text-muted);
-      font-size: 11px;
-      cursor: pointer;
-      font-family: inherit;
-      transition: all 0.15s;
-    }
-
-    .quick-btn:hover {
-      border-color: var(--accent);
-      color: var(--accent);
-    }
-
-    /* ── Activity Feed ─────────────────────────────────────── */
-    .feed-area {
-      flex: 1;
-      overflow-y: auto;
-      padding: 16px;
-    }
-
-    .feed-area::-webkit-scrollbar { width: 4px; }
-    .feed-area::-webkit-scrollbar-track { background: transparent; }
-    .feed-area::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-
-    .feed-entry {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 10px;
-      animation: slide-in 0.2s ease-out;
-    }
-
-    @keyframes slide-in {
-      from { opacity: 0; transform: translateY(-8px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    .feed-icon {
+    .logo { display: flex; align-items: center; gap: 10px; }
+    .logo-px {
       width: 28px; height: 28px;
-      border-radius: 7px;
+      background: linear-gradient(135deg, #7c6ff7, #c084fc);
+      border-radius: 4px; image-rendering: pixelated;
       display: flex; align-items: center; justify-content: center;
-      font-size: 13px;
-      flex-shrink: 0;
-      margin-top: 1px;
-    }
-
-    .feed-icon.info { background: rgba(59,130,246,0.15); }
-    .feed-icon.success { background: rgba(34,197,94,0.15); }
-    .feed-icon.error { background: rgba(239,68,68,0.15); }
-    .feed-icon.working { background: rgba(245,158,11,0.15); }
-    .feed-icon.note { background: rgba(168,85,247,0.15); }
-
-    .feed-content { flex: 1; min-width: 0; }
-
-    .feed-message {
-      color: var(--text);
-      line-height: 1.5;
-      word-break: break-word;
-    }
-
-    .feed-time {
-      font-size: 10px;
-      color: var(--text-muted);
-      margin-top: 2px;
-    }
-
-    /* ── Result Card ───────────────────────────────────────── */
-    .result-card {
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-left: 3px solid var(--green);
-      border-radius: 10px;
-      padding: 14px;
-      margin-bottom: 10px;
-      animation: slide-in 0.3s ease-out;
-    }
-
-    .result-card h4 {
-      font-size: 12px;
-      font-weight: 700;
-      color: var(--green);
-      margin-bottom: 6px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    .result-card p {
-      font-size: 13px;
-      color: var(--text);
-      line-height: 1.6;
-    }
-
-    .result-tags {
-      display: flex;
-      gap: 6px;
-      margin-top: 8px;
-      flex-wrap: wrap;
-    }
-
-    .tag {
-      padding: 2px 8px;
-      border-radius: 20px;
-      font-size: 10px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    .tag-agent { background: rgba(99,102,241,0.15); color: var(--accent); }
-    .tag-note { background: rgba(168,85,247,0.15); color: var(--purple); }
-
-    /* ── Chat Panel ────────────────────────────────────────── */
-    .chat-panel {
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
-
-    .agent-selector {
-      padding: 12px 16px;
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      gap: 6px;
-      flex-wrap: wrap;
-      flex-shrink: 0;
-    }
-
-    .agent-chip {
-      padding: 5px 12px;
-      border-radius: 20px;
-      border: 1px solid var(--border);
-      background: transparent;
-      color: var(--text-muted);
-      font-size: 11px;
-      font-weight: 600;
-      cursor: pointer;
-      font-family: inherit;
-      transition: all 0.15s;
-    }
-
-    .agent-chip.selected {
-      border-color: var(--accent);
-      background: var(--accent-glow);
-      color: var(--accent);
-    }
-
-    .chat-messages {
-      flex: 1;
-      overflow-y: auto;
-      padding: 12px;
-    }
-
-    .chat-messages::-webkit-scrollbar { width: 4px; }
-    .chat-messages::-webkit-scrollbar-track { background: transparent; }
-    .chat-messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-
-    .chat-message {
-      margin-bottom: 12px;
-      animation: slide-in 0.2s ease-out;
-    }
-
-    .chat-message.user .msg-bubble {
-      background: var(--accent);
-      color: white;
-      margin-left: 24px;
-    }
-
-    .chat-message.agent .msg-bubble {
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      margin-right: 24px;
-    }
-
-    .msg-sender {
-      font-size: 10px;
-      font-weight: 700;
-      color: var(--text-muted);
-      margin-bottom: 4px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    .msg-bubble {
-      border-radius: 10px;
-      padding: 10px 12px;
-      font-size: 13px;
-      line-height: 1.6;
-      word-break: break-word;
-    }
-
-    .typing-indicator {
-      display: flex;
-      gap: 4px;
-      padding: 10px 12px;
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      margin-right: 24px;
-      width: fit-content;
-      margin-bottom: 12px;
-    }
-
-    .typing-dot {
-      width: 6px; height: 6px;
-      border-radius: 50%;
-      background: var(--text-muted);
-      animation: typing 1.2s ease-in-out infinite;
-    }
-    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
-    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
-
-    @keyframes typing {
-      0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
-      30% { transform: translateY(-4px); opacity: 1; }
-    }
-
-    .chat-input-row {
-      padding: 12px;
-      border-top: 1px solid var(--border);
-      display: flex;
-      gap: 8px;
-      flex-shrink: 0;
-    }
-
-    .chat-input {
-      flex: 1;
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 8px 12px;
-      color: var(--text);
-      font-size: 13px;
-      font-family: inherit;
-      outline: none;
-      transition: border-color 0.2s;
-    }
-
-    .chat-input:focus { border-color: var(--accent); }
-    .chat-input::placeholder { color: var(--text-muted); }
-
-    .btn-send {
-      padding: 8px 14px;
-      background: var(--accent);
-      color: white;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
       font-size: 14px;
-      transition: background 0.15s;
+      box-shadow: 0 2px 0 #4a3d80;
     }
-    .btn-send:hover { background: #4f52d6; }
-    .btn-send:disabled { opacity: 0.5; cursor: not-allowed; }
-
-    /* ── Vault Stats ───────────────────────────────────────── */
-    .vault-stats {
-      padding: 0 16px 16px;
-    }
-
-    .vault-stat-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
+    .logo-text { font-family: 'Press Start 2P', monospace; font-size: 11px; color: var(--text); }
+    .hdr-right { display: flex; align-items: center; gap: 10px; font-size: 11px; color: var(--text-muted); }
+    .conn-dot {
+      width: 8px; height: 8px; border-radius: 2px;
+      background: var(--green);
+      box-shadow: 0 0 6px var(--green);
     }
 
-    .vault-stat {
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 10px 12px;
-      text-align: center;
-      cursor: pointer;
-      transition: border-color 0.15s;
+    /* ═══ Main Layout ═══ */
+    .main { display: flex; flex: 1; overflow: hidden; }
+
+    /* ═══ Sidebar ═══ */
+    .sidebar {
+      width: 270px; flex-shrink: 0;
+      background: var(--surface);
+      border-right: 2px solid var(--border);
+      display: flex; flex-direction: column;
     }
-
-    .vault-stat:hover { border-color: var(--accent); }
-
-    .vault-stat-num {
-      font-size: 22px;
-      font-weight: 800;
-      line-height: 1;
-      margin-bottom: 4px;
+    .sb-sec { padding: 12px; border-bottom: 1px solid var(--border); }
+    .sb-label {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 7px; text-transform: uppercase;
+      letter-spacing: 1px; color: var(--text-muted);
+      margin-bottom: 8px;
     }
+    .task-ta {
+      width: 100%; background: var(--surface2);
+      border: 2px solid var(--border); border-radius: 4px;
+      padding: 8px 10px; color: var(--text);
+      font-size: 12px; font-family: inherit;
+      resize: none; min-height: 60px; outline: none;
+    }
+    .task-ta:focus { border-color: var(--accent); }
+    .task-ta::placeholder { color: var(--text-muted); }
+    .task-row { display: flex; gap: 5px; margin-top: 6px; align-items: center; }
+    .sel {
+      background: var(--surface2); border: 2px solid var(--border);
+      color: var(--text); border-radius: 4px; padding: 5px 6px;
+      font-size: 11px; font-family: inherit; outline: none;
+    }
+    .btn {
+      padding: 6px 12px; border-radius: 4px; border: none;
+      cursor: pointer; font-size: 11px; font-weight: 700;
+      font-family: inherit; transition: all .12s; white-space: nowrap;
+      box-shadow: 0 2px 0 rgba(0,0,0,.3);
+    }
+    .btn:active { transform: translateY(2px); box-shadow: none; }
+    .btn-pri { background: var(--accent); color: #fff; }
+    .btn-pri:hover { background: #6a5de0; }
+    .btn-pri:disabled { opacity: .5; cursor: default; }
+    .btn-sec { background: var(--surface2); color: var(--text); border: 2px solid var(--border); }
+    .btn-sec:hover { border-color: var(--accent); }
+    .qb-row { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+    .qb {
+      padding: 3px 7px; border-radius: 3px;
+      border: 1px solid var(--border); background: transparent;
+      color: var(--text-muted); font-size: 9px;
+      cursor: pointer; font-family: inherit;
+    }
+    .qb:hover { border-color: var(--accent); color: var(--accent); }
+    .prog { height: 3px; background: var(--border); border-radius: 2px; margin-top: 6px; overflow: hidden; }
+    .prog-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--accent), var(--purple)); transition: width .3s; }
 
-    .vault-stat-label {
-      font-size: 10px;
+    /* Vault */
+    .vault-row { display: flex; gap: 4px; flex-wrap: wrap; }
+    .vc {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 3px; padding: 4px 6px; font-size: 10px;
+      cursor: pointer; display: flex; align-items: center; gap: 3px;
+    }
+    .vc:hover { border-color: var(--accent); }
+    .vc b { color: var(--accent); }
+
+    /* Feed */
+    .feed-lbl {
+      padding: 8px 12px 2px;
+      font-family: 'Press Start 2P', monospace;
+      font-size: 7px; text-transform: uppercase;
       color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
+    }
+    .feed { flex: 1; overflow-y: auto; padding: 6px 12px; }
+    .feed::-webkit-scrollbar { width: 3px; }
+    .feed::-webkit-scrollbar-thumb { background: var(--border); }
+    .fi { display: flex; gap: 6px; margin-bottom: 5px; animation: fin .2s ease-out; }
+    @keyframes fin { from{opacity:0;transform:translateY(-3px)} to{opacity:1;transform:translateY(0)} }
+    .fd { width: 6px; height: 6px; border-radius: 2px; flex-shrink: 0; margin-top: 4px; }
+    .fd.info{background:var(--blue)} .fd.success{background:var(--green)}
+    .fd.error{background:var(--red)} .fd.working{background:var(--yellow)}
+    .fd.note{background:var(--purple)}
+    .ft { font-size: 11px; line-height: 1.35; }
+    .ftm { font-size: 9px; color: var(--text-muted); }
+
+    /* ═══ Office ═══ */
+    .office-wrap {
+      flex: 1; position: relative; overflow: hidden;
+      display: flex; align-items: center; justify-content: center;
+      background: #0d0816;
     }
 
-    /* ── Empty state ───────────────────────────────────────── */
-    .empty-feed {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100%;
-      color: var(--text-muted);
-      text-align: center;
-      gap: 10px;
-    }
-
-    .empty-feed-icon { font-size: 40px; opacity: 0.3; }
-    .empty-feed-text { font-size: 13px; }
-
-    /* ── Progress bar ──────────────────────────────────────── */
-    .progress-bar {
-      height: 3px;
-      background: var(--border);
-      border-radius: 2px;
+    .office {
+      position: relative;
+      width: 820px; height: 560px;
+      border: 4px solid var(--wall-side);
+      border-radius: 6px;
       overflow: hidden;
-      margin-top: 8px;
+      box-shadow: 0 0 60px rgba(0,0,0,.5), inset 0 0 80px rgba(0,0,0,.3);
+      image-rendering: pixelated;
     }
 
-    .progress-fill {
-      height: 100%;
-      background: linear-gradient(90deg, var(--accent), var(--purple));
-      border-radius: 2px;
-      width: 0%;
-      transition: width 0.3s ease;
+    /* Floor */
+    .office-floor {
+      position: absolute; inset: 0;
+      background-color: #5a4530;
+      background-image:
+        repeating-linear-gradient(90deg,
+          #5a4530 0px, #5a4530 39px,
+          #4e3a26 39px, #4e3a26 40px
+        ),
+        repeating-linear-gradient(0deg,
+          transparent 0px, transparent 39px,
+          rgba(0,0,0,.08) 39px, rgba(0,0,0,.08) 40px
+        );
+      background-size: 40px 40px;
     }
 
-    /* ── Responsive tweaks ─────────────────────────────────── */
-    @media (max-width: 1024px) {
-      .layout { grid-template-columns: 260px 1fr; }
-      .chat-panel { display: none; }
+    /* Walls */
+    .wall-top {
+      position: absolute; top: 0; left: 0; right: 0; height: 32px;
+      background: linear-gradient(180deg, #3d2d52 0%, #4a3660 60%, #5a4530 100%);
+      border-bottom: 3px solid #2a1d3a;
+      z-index: 1;
+    }
+    .wall-top::after {
+      content: '';
+      position: absolute; bottom: 3px; left: 0; right: 0; height: 1px;
+      background: rgba(255,255,255,.06);
+    }
+
+    /* Meeting room carpet */
+    .carpet {
+      position: absolute;
+      background: #3a2850;
+      border: 2px solid #4a3568;
+      border-radius: 4px;
+      box-shadow: inset 0 0 20px rgba(0,0,0,.2);
+    }
+    .carpet-label {
+      position: absolute; top: 8px; left: 50%; transform: translateX(-50%);
+      font-family: 'Press Start 2P', monospace;
+      font-size: 6px; color: #6a5890; white-space: nowrap;
+      text-transform: uppercase; letter-spacing: 1px;
+      pointer-events: none;
+    }
+
+    /* Meeting table */
+    .mtable {
+      position: absolute;
+      background: linear-gradient(135deg, #5c4a78, #4a3860);
+      border: 2px solid #6a5890;
+      border-radius: 50%;
+      box-shadow: 0 4px 0 #3a2848, 0 6px 12px rgba(0,0,0,.4);
+    }
+
+    /* Furniture SVGs */
+    .furniture {
+      position: absolute;
+      image-rendering: pixelated;
+      pointer-events: none;
+    }
+
+    /* ═══ Characters ═══ */
+    .char {
+      position: absolute;
+      display: flex; flex-direction: column; align-items: center;
+      cursor: pointer; z-index: 10;
+      transition: left .9s cubic-bezier(.4,0,.2,1), top .9s cubic-bezier(.4,0,.2,1);
+      user-select: none;
+    }
+    .char:hover { filter: brightness(1.15); }
+    .char-sprite {
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+      transition: filter .2s;
+      filter: drop-shadow(0 3px 4px rgba(0,0,0,.5));
+    }
+    .char-label {
+      margin-top: 2px;
+      font-family: 'Press Start 2P', monospace;
+      font-size: 6px; color: #fff;
+      background: rgba(0,0,0,.7);
+      padding: 2px 5px; border-radius: 2px;
+      white-space: nowrap;
+      text-shadow: 1px 1px 0 #000;
+    }
+
+    /* Animations */
+    .char.idle .char-sprite { animation: ch-idle 2.8s ease-in-out infinite; }
+    .char.working .char-sprite { animation: ch-work .5s ease-in-out infinite; }
+    .char.done .char-sprite { animation: ch-done .4s ease-in-out 4; }
+    .char.walking .char-sprite { animation: ch-walk .3s ease-in-out infinite; }
+
+    @keyframes ch-idle { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-3px)} }
+    @keyframes ch-work { 0%,100%{transform:rotate(0)} 25%{transform:rotate(-4deg) translateY(-2px)} 75%{transform:rotate(4deg) translateY(-2px)} }
+    @keyframes ch-done { 0%,100%{transform:scale(1)} 50%{transform:scale(1.2) translateY(-4px)} }
+    @keyframes ch-walk { 0%,100%{transform:translateX(0)} 50%{transform:translateX(2px)} }
+
+    /* Status dot */
+    .char-dot {
+      position: absolute; top: 0; right: -2px;
+      width: 8px; height: 8px; border-radius: 2px;
+      border: 2px solid #3a2d55; z-index: 11;
+    }
+    .char-dot.idle { background: var(--text-muted); }
+    .char-dot.working { background: var(--yellow); box-shadow: 0 0 6px var(--yellow); animation: blink .7s infinite; }
+    .char-dot.done { background: var(--green); box-shadow: 0 0 6px var(--green); }
+    .char-dot.error { background: var(--red); }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+    /* Speech bubble */
+    .bubble {
+      position: absolute; bottom: calc(100% + 4px); left: 50%; transform: translateX(-50%);
+      background: #fff; color: #1a1a2e;
+      font-family: 'Press Start 2P', monospace;
+      font-size: 6px; font-weight: 400;
+      padding: 4px 7px; border-radius: 3px;
+      white-space: nowrap;
+      animation: bub-in .15s ease-out;
+      z-index: 25; pointer-events: none;
+      box-shadow: 0 2px 0 rgba(0,0,0,.3);
+    }
+    .bubble::after {
+      content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+      border: 4px solid transparent; border-top-color: #fff;
+    }
+    @keyframes bub-in { from{opacity:0;transform:translateX(-50%) translateY(3px) scale(.8)} to{opacity:1;transform:translateX(-50%) translateY(0) scale(1)} }
+
+    /* Particles */
+    .wpart {
+      position: absolute; font-size: 10px; pointer-events: none; z-index: 30;
+      animation: pfloat 1.2s ease-out forwards;
+    }
+    @keyframes pfloat {
+      0%{opacity:1;transform:translate(0,0) scale(1)}
+      100%{opacity:0;transform:translate(var(--px),var(--py)) scale(.3)}
+    }
+
+    /* Selection ring */
+    .char.selected .char-sprite {
+      filter: drop-shadow(0 0 8px rgba(124,111,247,.8)) drop-shadow(0 3px 4px rgba(0,0,0,.5));
+    }
+
+    /* ═══ Chat Panel ═══ */
+    .chat-panel {
+      position: absolute; right: 0; top: 0; bottom: 0; width: 300px;
+      background: var(--surface);
+      border-left: 2px solid var(--border);
+      display: flex; flex-direction: column;
+      transform: translateX(100%);
+      transition: transform .3s cubic-bezier(.4,0,.2,1);
+      z-index: 40;
+      box-shadow: -6px 0 24px rgba(0,0,0,.5);
+    }
+    .chat-panel.open { transform: translateX(0); }
+    .ch-hdr {
+      padding: 12px 14px; border-bottom: 2px solid var(--border);
+      display: flex; align-items: center; gap: 8px; flex-shrink: 0;
+    }
+    .ch-av {
+      width: 36px; height: 36px; border-radius: 4px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; image-rendering: pixelated;
+    }
+    .ch-info { flex: 1; }
+    .ch-name { font-family: 'Press Start 2P', monospace; font-size: 8px; }
+    .ch-role { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+    .btn-x {
+      width: 24px; height: 24px; border: none;
+      background: var(--surface2); border-radius: 3px;
+      color: var(--text-muted); cursor: pointer; font-size: 14px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .btn-x:hover { color: var(--text); }
+    .ch-msgs { flex: 1; overflow-y: auto; padding: 10px; }
+    .ch-msgs::-webkit-scrollbar { width: 3px; }
+    .ch-msgs::-webkit-scrollbar-thumb { background: var(--border); }
+    .cm { margin-bottom: 8px; animation: fin .2s ease-out; }
+    .cm.user .mb { background: var(--accent); color: #fff; margin-left: 24px; }
+    .cm.agent .mb { background: var(--surface2); border: 1px solid var(--border); margin-right: 24px; }
+    .ms { font-family: 'Press Start 2P', monospace; font-size: 6px; color: var(--text-muted); margin-bottom: 3px; }
+    .mb { border-radius: 6px; padding: 8px 10px; font-size: 12px; line-height: 1.5; word-break: break-word; }
+    .typi {
+      display: flex; gap: 3px; padding: 8px 10px;
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 6px; width: fit-content; margin-bottom: 8px; margin-right: 24px;
+    }
+    .td { width: 5px; height: 5px; border-radius: 2px; background: var(--text-muted); animation: typ 1.2s ease-in-out infinite; }
+    .td:nth-child(2){animation-delay:.2s} .td:nth-child(3){animation-delay:.4s}
+    @keyframes typ { 0%,60%,100%{transform:translateY(0);opacity:.4} 30%{transform:translateY(-4px);opacity:1} }
+    .ch-input-row { padding: 10px; border-top: 2px solid var(--border); display: flex; gap: 5px; }
+    .ch-input {
+      flex: 1; background: var(--surface2); border: 2px solid var(--border);
+      border-radius: 4px; padding: 7px 9px;
+      color: var(--text); font-size: 12px; font-family: inherit; outline: none;
+    }
+    .ch-input:focus { border-color: var(--accent); }
+    .ch-input::placeholder { color: var(--text-muted); }
+    .btn-snd {
+      padding: 7px 11px; background: var(--accent); color: #fff;
+      border: none; border-radius: 4px; cursor: pointer; font-size: 13px;
+      box-shadow: 0 2px 0 #4a3d80;
+    }
+    .btn-snd:active { transform: translateY(2px); box-shadow: none; }
+    .btn-snd:disabled { opacity: .5; cursor: default; }
+
+    /* Modal */
+    .modal-bg { display:none; position:fixed; inset:0; background:rgba(0,0,0,.8); z-index:100; align-items:center; justify-content:center; }
+    .modal-bg.open { display: flex; }
+    .modal { background:var(--surface); border:2px solid var(--border); border-radius:6px; padding:20px; width:360px; max-width:92vw; }
+    .modal h3 { font-family:'Press Start 2P',monospace; font-size:9px; margin-bottom:14px; }
+    .modal-in { width:100%; background:var(--surface2); border:2px solid var(--border); border-radius:4px; padding:9px 12px; color:var(--text); font-size:13px; font-family:inherit; outline:none; margin-bottom:10px; }
+    .modal-in:focus { border-color: var(--accent); }
+    .modal-acts { display:flex; gap:6px; justify-content:flex-end; }
+
+    /* Responsive */
+    @media (max-width: 1100px) {
+      .office { width: 600px; height: 420px; }
     }
   </style>
 </head>
 <body>
 
-<!-- ── Header ──────────────────────────────────────────────────────────── -->
 <header>
   <div class="logo">
-    <div class="logo-icon">🏢</div>
-    <span id="company-name">Escritório Virtual</span>
+    <div class="logo-px">🏢</div>
+    <span class="logo-text">DATTU OFFICE</span>
   </div>
-  <div class="header-right">
-    <div class="status-dot" id="conn-dot"></div>
-    <span class="status-label" id="conn-label">Conectando...</span>
+  <div class="hdr-right">
+    <div class="conn-dot" id="connDot"></div>
+    <span id="connLbl">Conectando...</span>
+    <span style="color:var(--border)">|</span>
+    <span id="activeStatus">--</span>
   </div>
 </header>
 
-<!-- ── Main Layout ──────────────────────────────────────────────────────── -->
-<div class="layout">
-
-  <!-- ── Coluna 1: Agentes ───────────────────────────────────────────── -->
-  <div class="panel">
-    <div class="panel-header">
-      <span>Agentes</span>
-      <span id="active-count">0 ativos</span>
-    </div>
-    <div class="panel-body" id="agents-panel">
-      <!-- preenchido por JS -->
-    </div>
-  </div>
-
-  <!-- ── Coluna 2: Centro (Task + Feed) ──────────────────────────────── -->
-  <div class="center-panel">
-
-    <div class="task-input-area">
+<div class="main">
+  <div class="sidebar">
+    <div class="sb-sec">
+      <div class="sb-label">Nova Tarefa</div>
+      <textarea id="taskIn" class="task-ta" placeholder="Descreva a tarefa..."></textarea>
       <div class="task-row">
-        <textarea
-          id="task-input"
-          class="task-input"
-          placeholder="Descreva uma tarefa para o escritório... ex: Contratar desenvolvedor backend"
-          rows="1"
-        ></textarea>
-        <button class="btn btn-primary" id="btn-send-task" onclick="sendTask()">
-          ▶ Executar
-        </button>
-        <button class="btn btn-secondary" onclick="openMeetingModal()">
-          🤝 Reunião
-        </button>
-      </div>
-      <div class="task-options">
-        <select class="priority-select" id="priority-select">
+        <select id="priSel" class="sel">
           <option value="low">Baixa</option>
           <option value="medium" selected>Média</option>
           <option value="high">Alta</option>
           <option value="urgent">Urgente</option>
         </select>
-        <div class="quick-actions">
-          <button class="quick-btn" onclick="quickTask('Contratar desenvolvedor fullstack sênior')">+ Contratar</button>
-          <button class="quick-btn" onclick="quickTask('Criar campanha de lançamento do produto')">+ Campanha</button>
-          <button class="quick-btn" onclick="quickTask('Tomar decisão sobre arquitetura do sistema')">+ Decisão</button>
-          <button class="quick-btn" onclick="quickTask('Criar pauta para reunião de planejamento')">+ Pauta</button>
+        <button class="btn btn-pri" id="btnExec" onclick="sendTask()">▶ GO</button>
+        <button class="btn btn-sec" onclick="openModal()" title="Reunião">🤝</button>
+      </div>
+      <div class="qb-row">
+        <button class="qb" onclick="qt('Contratar dev fullstack sênior')">+Contratar</button>
+        <button class="qb" onclick="qt('Campanha de marketing do produto')">+Campanha</button>
+        <button class="qb" onclick="qt('Decisão sobre arquitetura')">+Decisão</button>
+        <button class="qb" onclick="qt('Pauta para reunião de planejamento')">+Pauta</button>
+      </div>
+      <div class="prog"><div class="prog-fill" id="progFill"></div></div>
+    </div>
+    <div class="sb-sec">
+      <div class="sb-label">Vault</div>
+      <div class="vault-row" id="vaultRow"></div>
+    </div>
+    <div class="feed-lbl">Atividade</div>
+    <div class="feed" id="feed">
+      <div id="feedEmpty" style="text-align:center;padding:20px;color:var(--text-muted);font-size:11px;">
+        Aguardando atividade...
+      </div>
+    </div>
+  </div>
+
+  <div class="office-wrap">
+    <div class="office" id="office">
+      <div class="office-floor"></div>
+      <div class="wall-top"></div>
+      <!-- JS renders everything here -->
+    </div>
+
+    <div class="chat-panel" id="chatPanel">
+      <div class="ch-hdr">
+        <div class="ch-av" id="chAv"></div>
+        <div class="ch-info">
+          <div class="ch-name" id="chName">Agente</div>
+          <div class="ch-role" id="chRole">Cargo</div>
+        </div>
+        <button class="btn-x" onclick="closeChat()">✕</button>
+      </div>
+      <div class="ch-msgs" id="chMsgs">
+        <div style="text-align:center;padding:20px;color:var(--text-muted);font-size:11px;">
+          Clique em um personagem
         </div>
       </div>
-      <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
-    </div>
-
-    <div class="feed-area" id="feed">
-      <div class="empty-feed" id="empty-feed">
-        <div class="empty-feed-icon">🤖</div>
-        <div class="empty-feed-text">Envie uma tarefa para o escritório começar a trabalhar</div>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- ── Coluna 3: Chat + Vault ───────────────────────────────────────── -->
-  <div class="panel chat-panel">
-    <div class="panel-header">
-      <span>Chat com Agente</span>
-    </div>
-    <div class="agent-selector" id="agent-selector">
-      <!-- chips preenchidos por JS -->
-    </div>
-    <div class="chat-messages" id="chat-messages">
-      <div style="color: var(--text-muted); font-size: 12px; text-align: center; padding: 20px;">
-        Selecione um agente para conversar
-      </div>
-    </div>
-    <div class="chat-input-row">
-      <input
-        type="text"
-        class="chat-input"
-        id="chat-input"
-        placeholder="Mensagem..."
-        onkeydown="handleChatKey(event)"
-      />
-      <button class="btn-send" onclick="sendChatMessage()">➤</button>
-    </div>
-
-    <div class="panel-header" style="margin-top: 0; border-top: 1px solid var(--border);">
-      <span>Vault — Rede Neural</span>
-    </div>
-    <div class="vault-stats" id="vault-stats-area">
-      <div class="vault-stat-grid" id="vault-grid">
-        <!-- preenchido por JS -->
+      <div class="ch-input-row">
+        <input type="text" class="ch-input" id="chInput" placeholder="Mensagem..." onkeydown="if(event.key==='Enter'){event.preventDefault();sendChat()}" />
+        <button class="btn-snd" id="btnSnd" onclick="sendChat()">➤</button>
       </div>
     </div>
   </div>
-
 </div>
 
-<!-- ── Meeting Modal ────────────────────────────────────────────────────── -->
-<div id="meeting-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:100; display:none; align-items:center; justify-content:center;">
-  <div style="background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:28px; width:400px; max-width:90vw;">
-    <h3 style="margin-bottom:16px; font-size:16px;">🤝 Iniciar Reunião</h3>
-    <input
-      id="meeting-topic"
-      type="text"
-      placeholder="Tema da reunião..."
-      style="width:100%; background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:10px 14px; color:var(--text); font-size:14px; font-family:inherit; outline:none; margin-bottom:12px;"
-    />
-    <p style="font-size:12px; color:var(--text-muted); margin-bottom:16px;">
-      Participantes: Estratégia, RH e Criativo
-    </p>
-    <div style="display:flex; gap:8px; justify-content:flex-end;">
-      <button class="btn btn-secondary" onclick="closeMeetingModal()">Cancelar</button>
-      <button class="btn btn-primary" onclick="startMeeting()">Iniciar</button>
+<div class="modal-bg" id="modalBg">
+  <div class="modal">
+    <h3>INICIAR REUNIÃO</h3>
+    <input class="modal-in" id="meetTopic" type="text" placeholder="Tema da reunião..." />
+    <p style="font-size:11px;color:var(--text-muted);margin-bottom:12px;">Participantes: Estratégia, RH, Criativo</p>
+    <div class="modal-acts">
+      <button class="btn btn-sec" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-pri" onclick="startMeeting()">Iniciar</button>
     </div>
   </div>
 </div>
 
 <script>
-  // ── Config ────────────────────────────────────────────────────────────────
-  const AGENT_META = {
-    hr:        { emoji: '👔', name: 'Agente RH',         role: 'Recursos Humanos',  color: '#22c55e' },
-    creative:  { emoji: '🎨', name: 'Agente Criativo',   role: 'Design & Conteúdo', color: '#ec4899' },
-    strategy:  { emoji: '♟️', name: 'Agente Estratégia', role: 'Estratégia',         color: '#6366f1' },
-    meetings:  { emoji: '📋', name: 'Agente Reuniões',   role: 'Facilitação',        color: '#f59e0b' },
-    documents: { emoji: '📚', name: 'Agente Documentos', role: 'Conhecimento',       color: '#3b82f6' },
-  };
+// ═══ Pixel Art Sprite System ═══
 
-  const VAULT_FOLDER_META = {
-    Decisoes:  { emoji: '⚡', label: 'Decisões' },
-    Time:      { emoji: '👥', label: 'Time' },
-    Reunioes:  { emoji: '📋', label: 'Reuniões' },
-    Criativos: { emoji: '🎨', label: 'Criativos' },
-    Processos: { emoji: '⚙️', label: 'Processos' },
-    Ideias:    { emoji: '💡', label: 'Ideias' },
-  };
-
-  // ── State ─────────────────────────────────────────────────────────────────
-  let agentStatuses = {};
-  let selectedChatAgent = null;
-  let isProcessing = false;
-
-  // ── Socket.IO ─────────────────────────────────────────────────────────────
-  const socket = io();
-
-  socket.on('connect', () => {
-    setConnected(true);
-  });
-
-  socket.on('disconnect', () => {
-    setConnected(false);
-  });
-
-  socket.on('agents:list', (agents) => {
-    renderAgentCards(agents);
-    renderAgentChips(agents);
-  });
-
-  socket.on('vault:stats', (stats) => {
-    renderVaultStats(stats);
-  });
-
-  socket.on('log', (data) => {
-    addFeedEntry(data.level, data.message, data.timestamp);
-  });
-
-  socket.on('task:start', (data) => {
-    setProcessing(true);
-    addFeedEntry('working', `Nova tarefa: "${data.task}"`, null, '🚀');
-  });
-
-  socket.on('task:routed', (data) => {
-    addFeedEntry('info', `Roteando para: ${data.agents.map(r => AGENT_META[r]?.name ?? r).join(', ')}`, null, '🔀');
-  });
-
-  socket.on('agent:start', (data) => {
-    updateAgentStatus(data.role, 'working');
-    addFeedEntry('working', `${AGENT_META[data.role]?.emoji ?? '🤖'} ${AGENT_META[data.role]?.name ?? data.name} está trabalhando...`, null, AGENT_META[data.role]?.emoji ?? '🤖');
-  });
-
-  socket.on('agent:done', (data) => {
-    updateAgentStatus(data.role, 'done');
-    updateAgentLastAction(data.role, 'Tarefa concluída');
-    addFeedEntry('success', `${AGENT_META[data.role]?.name ?? data.name} concluiu.`, null, '✅');
-  });
-
-  socket.on('agent:error', (data) => {
-    updateAgentStatus(data.role, 'error');
-    addFeedEntry('error', `Erro em ${data.name}: ${data.error}`, null, '❌');
-  });
-
-  socket.on('task:done', (data) => {
-    setProcessing(false);
-    resetAgentStatuses(data.agentsInvolved);
-    showResult(data);
-  });
-
-  socket.on('note:created', (data) => {
-    addFeedEntry('note', `Nota salva no vault: ${data.path}`, null, '📝');
-  });
-
-  socket.on('agent:typing', (data) => {
-    showTypingIndicator(data.role);
-  });
-
-  socket.on('chat:response', (data) => {
-    hideTypingIndicator();
-    addChatMessage('agent', data.role, data.message);
-    enableChatInput();
-  });
-
-  socket.on('error', (data) => {
-    setProcessing(false);
-    addFeedEntry('error', data.message, null, '❌');
-  });
-
-  // ── Render functions ──────────────────────────────────────────────────────
-
-  function renderAgentCards(agents) {
-    const panel = document.getElementById('agents-panel');
-    panel.innerHTML = '';
-
-    const roles = agents.length > 0
-      ? agents.map(a => a.role)
-      : Object.keys(AGENT_META);
-
-    for (const role of roles) {
-      const meta = AGENT_META[role] ?? { emoji: '🤖', name: role, role: role, color: '#64748b' };
-      agentStatuses[role] = 'idle';
-
-      panel.innerHTML += `
-        <div class="agent-card" id="card-${role}" onclick="selectChatAgent('${role}')">
-          <div class="agent-card-top">
-            <div class="agent-avatar" style="background: ${meta.color}22; border: 1px solid ${meta.color}44;">
-              ${meta.emoji}
-            </div>
-            <div class="agent-info">
-              <div class="agent-name">${meta.name}</div>
-              <div class="agent-role">${meta.role}</div>
-            </div>
-          </div>
-          <div class="agent-status">
-            <div class="status-indicator idle" id="indicator-${role}"></div>
-            <span id="status-text-${role}" style="color: var(--text-muted);">Disponível</span>
-          </div>
-          <div class="agent-last-action" id="last-action-${role}">Aguardando tarefa...</div>
-        </div>
-      `;
+function spriteToSVG(rows, pal, scale) {
+  const h = rows.length, w = Math.max(...rows.map(r => r.length));
+  let rects = '';
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < rows[y].length; x++) {
+      const c = rows[y][x];
+      if (c === '.' || c === ' ') continue;
+      const fill = pal[c];
+      if (fill) rects += `<rect x="${x}" y="${y}" width="1" height="1" fill="${fill}"/>`;
     }
   }
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" width="${w*scale}" height="${h*scale}" style="image-rendering:pixelated;image-rendering:crisp-edges;">${rects}</svg>`;
+}
 
-  function renderAgentChips(agents) {
-    const selector = document.getElementById('agent-selector');
-    selector.innerHTML = '';
+// ═══ Character Sprites (12x18 grid) ═══
 
-    const roles = agents.length > 0
-      ? agents.map(a => a.role)
-      : Object.keys(AGENT_META);
+const CHAR_SPRITES = {
+  hr: {
+    rows: [
+      '...oooooo...',
+      '..ohhhhho...',
+      '.ohhHHHhho..',
+      '.ohsssssho..',
+      '.ohse.esho..',
+      '.ohsssssho..',
+      '..ossmssso..',
+      '...ossso....',
+      '..oBBBBBo...',
+      '.oaBBBBBao..',
+      '.oabBBBbao..',
+      '..oBBBBBo...',
+      '...oBBBo....',
+      '..opp.ppo...',
+      '..opp.ppo...',
+      '..opp.ppo...',
+      '..oxx.xxo...',
+      '...oo.oo....',
+    ],
+    pal: {
+      o:'#2a1a0a', h:'#7c3a10', H:'#a05020',
+      s:'#fcd5b0', a:'#eec5a0',
+      e:'#1a1a2e', m:'#cc7070',
+      B:'#16a34a', b:'#22c55e',
+      p:'#374151', x:'#1e293b',
+    },
+  },
+  creative: {
+    rows: [
+      '...oooooo...',
+      '..ohhhhhho..',
+      '..ohHhHhho..',
+      '.ohsssssho..',
+      '.ohse.esho..',
+      '.ohsssssho..',
+      '..ossmssso..',
+      '...ossso....',
+      '..oBBBBBo...',
+      '.oaBBBBBao..',
+      '.oabBBBbao..',
+      '..oBBBBBo...',
+      '...oBBBo....',
+      '..opp.ppo...',
+      '..opp.ppo...',
+      '..opp.ppo...',
+      '..oxx.xxo...',
+      '...oo.oo....',
+    ],
+    pal: {
+      o:'#1a0a1a', h:'#1a1a2e', H:'#2d2d4a',
+      s:'#f0c090', a:'#e0b080',
+      e:'#1a1a2e', m:'#cc7070',
+      B:'#be185d', b:'#ec4899',
+      p:'#1e3a5f', x:'#94a3b8',
+    },
+  },
+  strategy: {
+    rows: [
+      '...oooooo...',
+      '..ohhhhho...',
+      '..ohhhhho...',
+      '.ohsssssho..',
+      '.ohse.esho..',
+      '.ohsssssho..',
+      '..ossmssso..',
+      '...ossso....',
+      '..oBBBBBo...',
+      '.oaBBBBBao..',
+      '.oabBBBbao..',
+      '..oBBBBBo...',
+      '...oBBBo....',
+      '..opp.ppo...',
+      '..opp.ppo...',
+      '..opp.ppo...',
+      '..oxx.xxo...',
+      '...oo.oo....',
+    ],
+    pal: {
+      o:'#0a0a1a', h:'#2d1f0e', H:'#4a3520',
+      s:'#fcd5b0', a:'#eec5a0',
+      e:'#1a1a2e', m:'#cc8070',
+      B:'#4338ca', b:'#6366f1',
+      p:'#1e1b4b', x:'#5c3d1e',
+    },
+  },
+  meetings: {
+    rows: [
+      '...oooooo...',
+      '..ohhhhhho..',
+      '.ohhHHHhho..',
+      '.ohhssssho..',
+      '.ohse.esho..',
+      '.ohsssssho..',
+      '..ossmssso..',
+      '...ossso....',
+      '..oBBBBBo...',
+      '.oaBBBBBao..',
+      '.oabBBBbao..',
+      '..oBBBBBo...',
+      '...oBBBo....',
+      '..opp.ppo...',
+      '..opp.ppo...',
+      '..opp.ppo...',
+      '..oxx.xxo...',
+      '...oo.oo....',
+    ],
+    pal: {
+      o:'#1a0a00', h:'#92400e', H:'#b45309',
+      s:'#fddba6', a:'#edcb96',
+      e:'#1a1a2e', m:'#cc7070',
+      B:'#b45309', b:'#f59e0b',
+      p:'#4a3728', x:'#1e293b',
+    },
+  },
+  documents: {
+    rows: [
+      '...oooooo...',
+      '..ohhhhho...',
+      '..ohhhhho...',
+      '.ohsssssho..',
+      '.ohge.egho..',
+      '.ohsssssho..',
+      '..ossmssso..',
+      '...ossso....',
+      '..oBBBBBo...',
+      '.oaBBBBBao..',
+      '.oabBBBbao..',
+      '..oBBBBBo...',
+      '...oBBBo....',
+      '..opp.ppo...',
+      '..opp.ppo...',
+      '..opp.ppo...',
+      '..oxx.xxo...',
+      '...oo.oo....',
+    ],
+    pal: {
+      o:'#0a0a15', h:'#1e293b', H:'#334155',
+      s:'#fcd5b0', a:'#eec5a0',
+      e:'#1a1a2e', g:'#64748b', m:'#cc8080',
+      B:'#1d4ed8', b:'#3b82f6',
+      p:'#1e293b', x:'#111827',
+    },
+  },
+};
 
-    for (const role of roles) {
-      const meta = AGENT_META[role] ?? { emoji: '🤖', name: role };
-      selector.innerHTML += `
-        <button class="agent-chip" id="chip-${role}" onclick="selectChatAgent('${role}')">
-          ${meta.emoji} ${meta.name.replace('Agente ', '')}
-        </button>
-      `;
-    }
+// ═══ Desk Sprite (20x12) ═══
+const DESK_SPRITE = {
+  rows: [
+    'DDDDDDDDDDDDDDDDDDDD',
+    'DdddddddddddddddddD.',
+    'DdddddddddddddddddD.',
+    'DdddddddddddddddddD.',
+    'DdddddddddddddddddD.',
+    'DdddddddddddddddddD.',
+    'DdddddddddddddddddD.',
+    'DDDDDDDDDDDDDDDDDDDD',
+    '.LL................LL',
+    '.LL................LL',
+  ],
+  pal: { D:'#5c3d1e', d:'#8b6e48', L:'#3d2b0f' },
+};
+
+// ═══ Monitor Sprite (10x8) ═══
+const MONITOR_SPRITE = {
+  rows: [
+    '.FFFFFFFF.',
+    'FSSSSSSSSF',
+    'FSSSSSSSSF',
+    'FSSSSSSSSF',
+    'FSSSSSSSSF',
+    '.FFFFFFFF.',
+    '....PP....',
+    '...BBBB...',
+  ],
+  pal: { F:'#374151', S:'#0f172a', P:'#4b5563', B:'#374151' },
+};
+
+const MONITOR_ACTIVE_PAL = { F:'#4f46e5', S:'#1e1b4b', P:'#4b5563', B:'#374151' };
+
+// ═══ Chair Sprite (8x10) ═══
+const CHAIR_SPRITE = {
+  rows: [
+    '..CCCC..',
+    '.CCCCCC.',
+    '.CCCCCC.',
+    '.CCCCCC.',
+    '..CCCC..',
+    '...CC...',
+    '..SSSS..',
+    '.SSSSSS.',
+    '.S.SS.S.',
+    '.W.WW.W.',
+  ],
+  pal: { C:'#3a3050', S:'#2d2440', W:'#4a4060' },
+};
+
+// ═══ Plant Sprite (8x14) ═══
+const PLANT_SPRITE = {
+  rows: [
+    '...gg...',
+    '..gGgg..',
+    '.ggGGgg.',
+    '.gGGGGg.',
+    'ggGGGGgg',
+    '.gGGGGg.',
+    '..gggg..',
+    '...TT...',
+    '..PPPP..',
+    '.PPPPPP.',
+    '.PPppPP.',
+    '.PPppPP.',
+    '.PPPPPP.',
+    '..PPPP..',
+  ],
+  pal: { g:'#22c55e', G:'#16a34a', T:'#92400e', P:'#b45309', p:'#92400e' },
+};
+
+// ═══ Whiteboard Sprite (24x10) ═══
+const BOARD_SPRITE = {
+  rows: [
+    'FFFFFFFFFFFFFFFFFFFFFFFF',
+    'FwwwwwwwwwwwwwwwwwwwwwwF',
+    'Fww..www..ww..wwww..wwF',
+    'Fwwwwwwwwwwwwwwwwwwwwwf',
+    'Fww....www..ww.wwwwwwwF',
+    'FwwwwwwwwwwwwwwwwwwwwwF',
+    'Fww..wwww..ww..wwww..F',
+    'FwwwwwwwwwwwwwwwwwwwwwF',
+    'FFFFFFFFFFFFFFFFFFFFFFFF',
+    '....LL..........LL.....',
+  ],
+  pal: { F:'#64748b', f:'#64748b', w:'#e2e8f0', '.':'#cbd5e1', L:'#475569' },
+};
+
+// ═══ Agent Config ═══
+const AG = {
+  hr:        { name:'Ana',  role:'RH',              color:'#22c55e', emoji:'👔', label:'RH' },
+  creative:  { name:'Leo',  role:'Design & Conteúdo',color:'#ec4899', emoji:'🎨', label:'Criativo' },
+  strategy:  { name:'Max',  role:'Estratégia',       color:'#6366f1', emoji:'♟️', label:'Estratégia' },
+  meetings:  { name:'Maya', role:'Facilitação',      color:'#f59e0b', emoji:'📋', label:'Reuniões' },
+  documents: { name:'Alex', role:'Conhecimento',     color:'#3b82f6', emoji:'📚', label:'Docs' },
+};
+
+const VAULT_META = {
+  Decisoes:{ e:'⚡', l:'Decisões'}, Time:{ e:'👥', l:'Time'},
+  Reunioes:{ e:'📋', l:'Reuniões'}, Criativos:{ e:'🎨', l:'Criativos'},
+  Processos:{ e:'⚙️', l:'Processos'}, Ideias:{ e:'💡', l:'Ideias'},
+};
+
+// ═══ Office Layout (pixel coords within 820x560) ═══
+const LAYOUT = {
+  desks: {
+    hr:        { x: 50,  y: 100 },
+    creative:  { x: 580, y: 100 },
+    strategy:  { x: 50,  y: 360 },
+    meetings:  { x: 580, y: 360 },
+    documents: { x: 320, y: 420 },
+  },
+  chars: {
+    hr:        { x: 145, y: 72  },
+    creative:  { x: 675, y: 72  },
+    strategy:  { x: 145, y: 332 },
+    meetings:  { x: 675, y: 332 },
+    documents: { x: 415, y: 392 },
+  },
+  chairs: {
+    hr:        { x: 70,  y: 155 },
+    creative:  { x: 600, y: 155 },
+    strategy:  { x: 70,  y: 415 },
+    meetings:  { x: 600, y: 415 },
+    documents: { x: 340, y: 475 },
+  },
+  monitors: {
+    hr:        { x: 72,  y: 90 },
+    creative:  { x: 602, y: 90 },
+    strategy:  { x: 72,  y: 350 },
+    meetings:  { x: 602, y: 350 },
+    documents: { x: 342, y: 410 },
+  },
+  meetingRoom: { x: 255, y: 130, w: 310, h: 230 },
+  meetingTable: { x: 340, y: 205, w: 140, h: 90 },
+  meetingSpots: [
+    { x: 285, y: 295 },
+    { x: 365, y: 295 },
+    { x: 445, y: 295 },
+  ],
+  plants: [
+    { x: 10, y: 38 },
+    { x: 770, y: 38 },
+    { x: 10,  y: 490 },
+    { x: 770, y: 490 },
+    { x: 240, y: 38 },
+    { x: 540, y: 38 },
+  ],
+  whiteboard: { x: 340, y: 40 },
+};
+
+// ═══ State ═══
+let states = {};
+let selAgent = null;
+let processing = false;
+const bubTimers = {};
+
+// ═══ Socket.IO ═══
+const socket = io();
+socket.on('connect', () => setCon(true));
+socket.on('disconnect', () => setCon(false));
+socket.on('vault:stats', renderVault);
+
+socket.on('log', d => addFeed(d.level, d.message));
+socket.on('task:start', d => { setProc(true); addFeed('working','🚀 '+d.task); });
+socket.on('task:routed', d => { addFeed('info','🔀 → '+d.agents.map(r=>AG[r]?.name||r).join(', ')); });
+
+socket.on('agent:start', d => {
+  setCS(d.role,'working');
+  showBub(d.role,'Trabalhando...',0);
+  spawnP(d.role);
+  addFeed('working', AG[d.role]?.emoji+' '+AG[d.role]?.name+' trabalhando...');
+});
+socket.on('agent:done', d => {
+  setCS(d.role,'done');
+  showBub(d.role,'Pronto!',2500);
+  addFeed('success','✅ '+AG[d.role]?.name+' concluiu');
+});
+socket.on('agent:error', d => {
+  setCS(d.role,'error');
+  showBub(d.role,'Erro!',3000);
+  addFeed('error','❌ '+d.name+': '+d.error);
+});
+socket.on('task:done', d => {
+  setProc(false);
+  setTimeout(()=>(d.agentsInvolved||[]).forEach(r=>setCS(r,'idle')),3000);
+  addFeed('success','✨ Concluído — '+(d.notesCreated?.length||0)+' nota(s)');
+  if(d.summary) addFeed('info','📋 '+d.summary.slice(0,140));
+});
+socket.on('note:created', d => addFeed('note','📝 '+d.path));
+socket.on('agent:typing', () => showTyp());
+socket.on('chat:response', d => { hideTyp(); addCM('agent',d.role,d.message); enCI(); });
+socket.on('error', d => { setProc(false); addFeed('error','❌ '+d.message); });
+
+// ═══ Render Office ═══
+function renderOffice() {
+  const ofc = document.getElementById('office');
+
+  // Carpet / meeting room
+  const mr = LAYOUT.meetingRoom;
+  const carpet = document.createElement('div');
+  carpet.className = 'carpet';
+  carpet.style.cssText = `left:${mr.x}px;top:${mr.y}px;width:${mr.w}px;height:${mr.h}px;z-index:2;`;
+  carpet.innerHTML = '<div class="carpet-label">Sala de Reuniões</div>';
+  ofc.appendChild(carpet);
+
+  // Meeting table
+  const mt = LAYOUT.meetingTable;
+  const tbl = document.createElement('div');
+  tbl.className = 'mtable';
+  tbl.style.cssText = `left:${mt.x}px;top:${mt.y}px;width:${mt.w}px;height:${mt.h}px;z-index:3;`;
+  ofc.appendChild(tbl);
+
+  // Whiteboard
+  const wb = LAYOUT.whiteboard;
+  const wbEl = document.createElement('div');
+  wbEl.className = 'furniture';
+  wbEl.style.cssText = `left:${wb.x}px;top:${wb.y}px;z-index:3;`;
+  wbEl.innerHTML = spriteToSVG(BOARD_SPRITE.rows, BOARD_SPRITE.pal, 3);
+  ofc.appendChild(wbEl);
+
+  // Plants
+  LAYOUT.plants.forEach(p => {
+    const el = document.createElement('div');
+    el.className = 'furniture';
+    el.style.cssText = `left:${p.x}px;top:${p.y}px;z-index:3;`;
+    el.innerHTML = spriteToSVG(PLANT_SPRITE.rows, PLANT_SPRITE.pal, 3);
+    ofc.appendChild(el);
+  });
+
+  // Desks, Chairs, Monitors, Characters
+  for (const [role, meta] of Object.entries(AG)) {
+    const dp = LAYOUT.desks[role];
+    const cp = LAYOUT.chairs[role];
+    const mp = LAYOUT.monitors[role];
+    const chp = LAYOUT.chars[role];
+
+    // Desk
+    const desk = document.createElement('div');
+    desk.className = 'furniture';
+    desk.style.cssText = `left:${dp.x}px;top:${dp.y}px;z-index:4;`;
+    desk.innerHTML = spriteToSVG(DESK_SPRITE.rows, DESK_SPRITE.pal, 4);
+    ofc.appendChild(desk);
+
+    // Chair
+    const chair = document.createElement('div');
+    chair.className = 'furniture';
+    chair.style.cssText = `left:${cp.x}px;top:${cp.y}px;z-index:3;`;
+    chair.innerHTML = spriteToSVG(CHAIR_SPRITE.rows, CHAIR_SPRITE.pal, 3);
+    ofc.appendChild(chair);
+
+    // Monitor
+    const mon = document.createElement('div');
+    mon.className = 'furniture';
+    mon.id = `mon-${role}`;
+    mon.style.cssText = `left:${mp.x}px;top:${mp.y}px;z-index:5;`;
+    mon.innerHTML = spriteToSVG(MONITOR_SPRITE.rows, MONITOR_SPRITE.pal, 3);
+    ofc.appendChild(mon);
+
+    // Desk label
+    const dl = document.createElement('div');
+    dl.style.cssText = `position:absolute;left:${dp.x}px;top:${dp.y+44}px;width:80px;
+      text-align:center;font-family:'Press Start 2P',monospace;font-size:5px;
+      color:#8b7860;z-index:5;pointer-events:none;`;
+    dl.textContent = meta.label;
+    ofc.appendChild(dl);
+
+    // Character
+    const sp = CHAR_SPRITES[role];
+    const charEl = document.createElement('div');
+    charEl.className = 'char idle';
+    charEl.id = `ch-${role}`;
+    charEl.dataset.hx = chp.x;
+    charEl.dataset.hy = chp.y;
+    charEl.style.cssText = `left:${chp.x}px;top:${chp.y}px;z-index:8;`;
+    charEl.onclick = () => openChat(role);
+    charEl.innerHTML = `
+      <div style="position:relative;">
+        <div class="char-sprite">${spriteToSVG(sp.rows, sp.pal, 4)}</div>
+        <div class="char-dot idle" id="dot-${role}"></div>
+      </div>
+      <div class="char-label">${meta.name}</div>
+    `;
+    ofc.appendChild(charEl);
+
+    states[role] = { status:'idle', el:charEl };
+  }
+}
+
+// ═══ Character State ═══
+function setCS(role, status) {
+  const st = states[role];
+  if (!st) return;
+  const el = st.el;
+  el.className = `char ${status}`;
+  if (selAgent === role) el.classList.add('selected');
+
+  const dot = document.getElementById(`dot-${role}`);
+  if (dot) dot.className = `char-dot ${status}`;
+
+  // Monitor glow
+  const mon = document.getElementById(`mon-${role}`);
+  if (mon) {
+    const sp = MONITOR_SPRITE;
+    mon.innerHTML = spriteToSVG(sp.rows, status === 'working' ? MONITOR_ACTIVE_PAL : sp.pal, 3);
   }
 
-  function renderVaultStats(stats) {
-    const grid = document.getElementById('vault-grid');
-    grid.innerHTML = '';
-
-    for (const [folder, count] of Object.entries(stats)) {
-      const meta = VAULT_FOLDER_META[folder] ?? { emoji: '📁', label: folder };
-      const colors = ['#6366f1','#22c55e','#f59e0b','#ec4899','#3b82f6','#a855f7'];
-      const color = colors[Object.keys(stats).indexOf(folder) % colors.length];
-      grid.innerHTML += `
-        <div class="vault-stat" onclick="loadVaultFolder('${folder}')">
-          <div class="vault-stat-num" style="color:${color}">${count}</div>
-          <div class="vault-stat-label">${meta.emoji} ${meta.label}</div>
-        </div>
-      `;
-    }
+  // Move char to desk when working
+  if (status === 'working') {
+    const dp = LAYOUT.desks[role];
+    el.style.left = (dp.x + 25) + 'px';
+    el.style.top = (dp.y - 10) + 'px';
+  } else if (status === 'idle' || status === 'done') {
+    el.style.left = el.dataset.hx + 'px';
+    el.style.top = el.dataset.hy + 'px';
   }
 
-  // ── Agent status ──────────────────────────────────────────────────────────
+  st.status = status;
+  updateActive();
+}
 
-  function updateAgentStatus(role, status) {
-    agentStatuses[role] = status;
+function updateActive() {
+  const w = Object.values(states).filter(s => s && s.status === 'working').length;
+  document.getElementById('activeStatus').textContent =
+    w > 0 ? w + ' trabalhando' : 'Todos livres';
+}
 
-    const card = document.getElementById(`card-${role}`);
-    const indicator = document.getElementById(`indicator-${role}`);
-    const statusText = document.getElementById(`status-text-${role}`);
+// ═══ Bubbles ═══
+function showBub(role, text, dur) {
+  const el = document.getElementById(`ch-${role}`);
+  if (!el) return;
+  let old = el.querySelector('.bubble');
+  if (old) old.remove();
+  const b = document.createElement('div');
+  b.className = 'bubble';
+  b.textContent = text;
+  el.appendChild(b);
+  if (bubTimers[role]) clearTimeout(bubTimers[role]);
+  if (dur > 0) bubTimers[role] = setTimeout(() => { if (b.parentNode) b.remove(); }, dur);
+}
 
-    if (!card || !indicator) return;
-
-    card.className = 'agent-card';
-    indicator.className = `status-indicator ${status}`;
-
-    const labels = { idle: 'Disponível', working: 'Trabalhando...', done: 'Concluído', error: 'Erro' };
-    const colors = { idle: 'var(--text-muted)', working: 'var(--yellow)', done: 'var(--green)', error: 'var(--red)' };
-
-    if (statusText) {
-      statusText.textContent = labels[status] ?? status;
-      statusText.style.color = colors[status] ?? 'var(--text-muted)';
-    }
-
-    if (status === 'working') card.classList.add('working');
-    if (status === 'done') card.classList.add('active');
-
-    // Atualiza contador
-    const workingCount = Object.values(agentStatuses).filter(s => s === 'working').length;
-    document.getElementById('active-count').textContent = workingCount > 0
-      ? `${workingCount} trabalhando`
-      : '0 ativos';
-  }
-
-  function updateAgentLastAction(role, text) {
-    const el = document.getElementById(`last-action-${role}`);
-    if (el) el.textContent = text;
-  }
-
-  function resetAgentStatuses(roles) {
+// ═══ Particles ═══
+function spawnP(role) {
+  const el = document.getElementById(`ch-${role}`);
+  if (!el) return;
+  const icons = ['⚡','✨','💡','⚙️','📌'];
+  for (let i = 0; i < 3; i++) {
     setTimeout(() => {
-      (roles ?? Object.keys(agentStatuses)).forEach(role => {
-        updateAgentStatus(role, 'idle');
-      });
-    }, 3000);
+      const p = document.createElement('div');
+      p.className = 'wpart';
+      p.style.setProperty('--px', (Math.random()-.5)*40+'px');
+      p.style.setProperty('--py', -(15+Math.random()*25)+'px');
+      p.style.left = (5+Math.random()*30)+'px';
+      p.style.top = '0px';
+      p.textContent = icons[Math.floor(Math.random()*icons.length)];
+      el.appendChild(p);
+      setTimeout(()=>p.remove(), 1300);
+    }, i*200);
   }
+}
 
-  // ── Feed ──────────────────────────────────────────────────────────────────
+// ═══ Chat ═══
+function openChat(role) {
+  const m = AG[role]; if (!m) return;
+  if (selAgent) { const p = document.getElementById(`ch-${selAgent}`); if(p) p.classList.remove('selected'); }
+  selAgent = role;
+  const ce = document.getElementById(`ch-${role}`);
+  if (ce) ce.classList.add('selected');
 
-  function addFeedEntry(level, message, timestamp, icon) {
-    const feed = document.getElementById('feed');
-    const emptyFeed = document.getElementById('empty-feed');
-    if (emptyFeed) emptyFeed.remove();
+  document.getElementById('chAv').style.cssText = `background:${m.color}22;border:2px solid ${m.color}66;font-size:18px;`;
+  document.getElementById('chAv').textContent = m.emoji;
+  document.getElementById('chName').textContent = m.name;
+  document.getElementById('chRole').textContent = m.role;
 
-    const iconMap = {
-      info: '💬', success: '✅', error: '❌', working: '⚙️', note: '📝'
-    };
+  const msgs = document.getElementById('chMsgs');
+  msgs.innerHTML = `<div style="text-align:center;padding:16px;font-size:10px;color:var(--text-muted);">
+    ${m.emoji} Conversando com <strong style="color:var(--text)">${m.name}</strong>
+  </div>`;
 
-    const time = timestamp
-      ? new Date(timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
-      : new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  document.getElementById('chatPanel').classList.add('open');
+  document.getElementById('chInput').focus();
+}
 
-    const entry = document.createElement('div');
-    entry.className = 'feed-entry';
-    entry.innerHTML = `
-      <div class="feed-icon ${level}">${icon ?? iconMap[level] ?? '•'}</div>
-      <div class="feed-content">
-        <div class="feed-message">${escHtml(message)}</div>
-        <div class="feed-time">${time}</div>
-      </div>
-    `;
+function closeChat() {
+  document.getElementById('chatPanel').classList.remove('open');
+  if (selAgent) { const e = document.getElementById(`ch-${selAgent}`); if(e) e.classList.remove('selected'); selAgent = null; }
+}
 
-    feed.appendChild(entry);
-    feed.scrollTop = feed.scrollHeight;
+function sendChat() {
+  const inp = document.getElementById('chInput');
+  const msg = inp.value.trim();
+  if (!msg || !selAgent) return;
+  addCM('user','Você',msg);
+  inp.value = ''; inp.disabled = true;
+  document.getElementById('btnSnd').disabled = true;
+  socket.emit('chat:message', { role:selAgent, message:msg, sessionId:socket.id });
+}
+
+function addCM(type, sender, text) {
+  const msgs = document.getElementById('chMsgs');
+  const m = type==='agent' ? AG[sender] : null;
+  const d = document.createElement('div');
+  d.className = `cm ${type}`;
+  d.innerHTML = `
+    <div class="ms">${type==='agent' ? (m?.emoji||'')+' '+m?.name : sender}</div>
+    <div class="mb">${esc(text)}</div>`;
+  msgs.appendChild(d);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function showTyp() {
+  const msgs = document.getElementById('chMsgs');
+  if (document.getElementById('typI')) return;
+  const d = document.createElement('div'); d.id='typI'; d.className='typi';
+  d.innerHTML='<div class="td"></div><div class="td"></div><div class="td"></div>';
+  msgs.appendChild(d); msgs.scrollTop = msgs.scrollHeight;
+}
+function hideTyp() { const e = document.getElementById('typI'); if(e) e.remove(); }
+function enCI() {
+  document.getElementById('chInput').disabled = false;
+  document.getElementById('btnSnd').disabled = false;
+  document.getElementById('chInput').focus();
+}
+
+// ═══ Tasks ═══
+function sendTask() {
+  const inp = document.getElementById('taskIn');
+  const t = inp.value.trim();
+  if (!t || processing) return;
+  socket.emit('task:submit', { task:t, priority:document.getElementById('priSel').value });
+  inp.value = ''; inp.style.height = 'auto';
+}
+function qt(t) { document.getElementById('taskIn').value = t; sendTask(); }
+function setProc(p) {
+  processing = p;
+  const b = document.getElementById('btnExec');
+  const f = document.getElementById('progFill');
+  b.disabled = p; b.textContent = p ? '⏳ ...' : '▶ GO';
+  f.style.width = p ? '100%' : '0%';
+  f.style.transition = p ? 'width 28s linear' : 'width .3s';
+}
+
+// ═══ Meeting ═══
+function openModal() { document.getElementById('modalBg').classList.add('open'); document.getElementById('meetTopic').focus(); }
+function closeModal() { document.getElementById('modalBg').classList.remove('open'); }
+function startMeeting() {
+  const t = document.getElementById('meetTopic').value.trim();
+  if (!t) return;
+  socket.emit('meeting:start', { topic:t });
+  closeModal();
+  document.getElementById('meetTopic').value = '';
+  addFeed('working','🤝 Reunião: '+t);
+  ['strategy','hr','creative'].forEach((r,i) => {
+    const el = document.getElementById(`ch-${r}`);
+    if (!el) return;
+    const sp = LAYOUT.meetingSpots[i];
+    setTimeout(() => {
+      el.className = 'char walking';
+      setTimeout(() => {
+        el.className = 'char idle';
+        el.style.left = sp.x+'px';
+        el.style.top = sp.y+'px';
+        showBub(r,'Em reunião',0);
+      }, 400);
+    }, i*250);
+  });
+}
+
+// ═══ Feed ═══
+function addFeed(lvl, msg) {
+  const f = document.getElementById('feed');
+  const e = document.getElementById('feedEmpty'); if(e) e.remove();
+  const t = new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const d = document.createElement('div'); d.className='fi';
+  d.innerHTML = `<div class="fd ${lvl}"></div><div><div class="ft">${esc(msg)}</div><div class="ftm">${t}</div></div>`;
+  f.appendChild(d); f.scrollTop = f.scrollHeight;
+  while (f.children.length > 50) f.removeChild(f.firstChild);
+}
+
+// ═══ Vault ═══
+function renderVault(stats) {
+  const r = document.getElementById('vaultRow'); r.innerHTML = '';
+  for (const [k,v] of Object.entries(stats)) {
+    const m = VAULT_META[k]||{e:'📁',l:k};
+    const c = document.createElement('div'); c.className='vc';
+    c.innerHTML = `<b>${v}</b>${m.e} ${m.l}`;
+    c.onclick = () => loadVF(k);
+    r.appendChild(c);
   }
-
-  function showResult(data) {
-    const feed = document.getElementById('feed');
-
-    const card = document.createElement('div');
-    card.className = 'result-card';
-
-    const tagsHtml = [
-      ...data.agentsInvolved.map(r => `<span class="tag tag-agent">${AGENT_META[r]?.emoji ?? ''} ${AGENT_META[r]?.name ?? r}</span>`),
-      `<span class="tag tag-note">📝 ${data.notesCreated.length} nota(s)</span>`,
-    ].join('');
-
-    const nextStepsHtml = data.nextSteps?.length > 0
-      ? `<div style="margin-top:8px; font-size:12px; color:var(--text-muted);">
-           <strong style="color:var(--text);">Próximos passos:</strong>
-           ${data.nextSteps.map(s => `<div>• ${escHtml(s)}</div>`).join('')}
-         </div>`
-      : '';
-
-    card.innerHTML = `
-      <h4>✅ Tarefa Concluída — ${data.taskId.slice(0, 8)}</h4>
-      <p>${escHtml(data.summary)}</p>
-      ${nextStepsHtml}
-      <div class="result-tags">${tagsHtml}</div>
-    `;
-
-    feed.appendChild(card);
-    feed.scrollTop = feed.scrollHeight;
-  }
-
-  // ── Chat ──────────────────────────────────────────────────────────────────
-
-  function selectChatAgent(role) {
-    selectedChatAgent = role;
-
-    document.querySelectorAll('.agent-chip').forEach(c => c.classList.remove('selected'));
-    document.querySelectorAll('.agent-card').forEach(c => c.classList.remove('active'));
-
-    const chip = document.getElementById(`chip-${role}`);
-    const card = document.getElementById(`card-${role}`);
-    if (chip) chip.classList.add('selected');
-    if (card) card.classList.add('active');
-
-    const meta = AGENT_META[role] ?? { name: role };
-    const messages = document.getElementById('chat-messages');
-    messages.innerHTML = `
-      <div style="text-align:center; padding:16px; color:var(--text-muted); font-size:12px;">
-        ${meta.emoji ?? '🤖'} Conversando com <strong style="color:var(--text)">${meta.name}</strong>
-      </div>
-    `;
-    document.getElementById('chat-input').focus();
-  }
-
-  function sendChatMessage() {
-    const input = document.getElementById('chat-input');
-    const message = input.value.trim();
-
-    if (!message || !selectedChatAgent) return;
-
-    addChatMessage('user', 'Você', message);
-    input.value = '';
-    input.disabled = true;
-    document.querySelector('.btn-send').disabled = true;
-
-    socket.emit('chat:message', {
-      role: selectedChatAgent,
-      message,
-      sessionId: socket.id,
-    });
-  }
-
-  function addChatMessage(type, sender, text) {
-    const messages = document.getElementById('chat-messages');
-    const meta = type === 'agent' ? (AGENT_META[sender] ?? { name: sender, emoji: '🤖' }) : null;
-
-    const div = document.createElement('div');
-    div.className = `chat-message ${type}`;
-    div.innerHTML = `
-      <div class="msg-sender">${type === 'agent' ? (meta?.emoji + ' ' + meta?.name) : sender}</div>
-      <div class="msg-bubble">${escHtml(text)}</div>
-    `;
-    messages.appendChild(div);
-    messages.scrollTop = messages.scrollHeight;
-  }
-
-  function showTypingIndicator() {
-    const messages = document.getElementById('chat-messages');
-    const existing = document.getElementById('typing-indicator');
-    if (existing) return;
-
-    const div = document.createElement('div');
-    div.id = 'typing-indicator';
-    div.className = 'typing-indicator';
-    div.innerHTML = '<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>';
-    messages.appendChild(div);
-    messages.scrollTop = messages.scrollHeight;
-  }
-
-  function hideTypingIndicator() {
-    const el = document.getElementById('typing-indicator');
-    if (el) el.remove();
-  }
-
-  function enableChatInput() {
-    document.getElementById('chat-input').disabled = false;
-    document.querySelector('.btn-send').disabled = false;
-    document.getElementById('chat-input').focus();
-  }
-
-  function handleChatKey(e) {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      sendChatMessage();
-    }
-  }
-
-  // ── Tasks ─────────────────────────────────────────────────────────────────
-
-  function sendTask() {
-    const input = document.getElementById('task-input');
-    const task = input.value.trim();
-    if (!task || isProcessing) return;
-
-    const priority = document.getElementById('priority-select').value;
-    socket.emit('task:submit', { task, priority });
-    input.value = '';
-  }
-
-  function quickTask(task) {
-    document.getElementById('task-input').value = task;
-    sendTask();
-  }
-
-  function setProcessing(processing) {
-    isProcessing = processing;
-    const btn = document.getElementById('btn-send-task');
-    const fill = document.getElementById('progress-fill');
-
-    btn.disabled = processing;
-    btn.textContent = processing ? '⏳ Processando...' : '▶ Executar';
-    fill.style.width = processing ? '100%' : '0%';
-    fill.style.transition = processing ? 'width 30s linear' : 'width 0.3s';
-  }
-
-  // ── Meeting modal ─────────────────────────────────────────────────────────
-
-  function openMeetingModal() {
-    document.getElementById('meeting-modal').style.display = 'flex';
-    document.getElementById('meeting-topic').focus();
-  }
-
-  function closeMeetingModal() {
-    document.getElementById('meeting-modal').style.display = 'none';
-  }
-
-  function startMeeting() {
-    const topic = document.getElementById('meeting-topic').value.trim();
-    if (!topic) return;
-
-    socket.emit('meeting:start', { topic });
-    closeMeetingModal();
-    document.getElementById('meeting-topic').value = '';
-  }
-
-  // ── Connection ────────────────────────────────────────────────────────────
-
-  function setConnected(connected) {
-    const dot = document.getElementById('conn-dot');
-    const label = document.getElementById('conn-label');
-    dot.style.background = connected ? 'var(--green)' : 'var(--red)';
-    dot.style.boxShadow = connected ? '0 0 8px var(--green)' : '0 0 8px var(--red)';
-    label.textContent = connected ? 'Online' : 'Desconectado';
-  }
-
-  // ── Vault folder view ─────────────────────────────────────────────────────
-
-  async function loadVaultFolder(folder) {
+}
+async function loadVF(folder) {
+  const m = VAULT_META[folder]||{e:'📁',l:folder};
+  try {
     const res = await fetch(`/api/vault/notes/${folder}`);
     const notes = await res.json();
+    addFeed('note',`${m.e} ${m.l}: ${notes.length} nota(s)`);
+    notes.slice(0,3).forEach(n=>addFeed('info','📄 '+n.filename.replace('.md','')));
+  } catch(e) { addFeed('error','Erro ao carregar'); }
+}
 
-    const feed = document.getElementById('feed');
-    const meta = VAULT_FOLDER_META[folder] ?? { emoji: '📁', label: folder };
+// ═══ Conn ═══
+function setCon(c) {
+  document.getElementById('connDot').style.background = c?'var(--green)':'var(--red)';
+  document.getElementById('connDot').style.boxShadow = c?'0 0 6px var(--green)':'0 0 6px var(--red)';
+  document.getElementById('connLbl').textContent = c?'Online':'Offline';
+}
 
-    const card = document.createElement('div');
-    card.className = 'result-card';
-    card.style.borderLeftColor = 'var(--accent)';
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
-    const notesHtml = notes.length === 0
-      ? '<p style="color:var(--text-muted)">Nenhuma nota ainda.</p>'
-      : notes.map(n => `
-          <div style="padding:6px 0; border-bottom:1px solid var(--border);">
-            <div style="font-size:12px; font-weight:600;">📄 ${escHtml(n.filename.replace('.md',''))}</div>
-            <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">${escHtml(n.preview)}...</div>
-          </div>
-        `).join('');
+// ═══ Init ═══
+document.addEventListener('DOMContentLoaded', () => {
+  renderOffice();
+  fetch('/api/vault/stats').then(r=>r.json()).then(renderVault).catch(()=>{});
 
-    card.innerHTML = `
-      <h4>${meta.emoji} ${meta.label} — ${notes.length} nota(s)</h4>
-      ${notesHtml}
-    `;
-
-    feed.appendChild(card);
-    feed.scrollTop = feed.scrollHeight;
-  }
-
-  // ── Utils ─────────────────────────────────────────────────────────────────
-
-  function escHtml(str) {
-    return String(str ?? '')
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;');
-  }
-
-  // ── Init ──────────────────────────────────────────────────────────────────
-
-  document.addEventListener('DOMContentLoaded', () => {
-    // Título com nome da empresa
-    fetch('/api/agents').then(r => r.json()).then(agents => {
-      renderAgentCards(agents);
-      renderAgentChips(agents);
-    });
-
-    fetch('/api/vault/stats').then(r => r.json()).then(stats => {
-      renderVaultStats(stats);
-    });
-
-    // Enter no task input
-    document.getElementById('task-input').addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        sendTask();
-      }
-    });
-
-    // Enter no meeting topic
-    document.getElementById('meeting-topic').addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') startMeeting();
-    });
-
-    // Fechar modal com ESC
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') closeMeetingModal();
-    });
-
-    // Auto-resize textarea
-    const textarea = document.getElementById('task-input');
-    textarea.addEventListener('input', () => {
-      textarea.style.height = 'auto';
-      textarea.style.height = Math.min(textarea.scrollHeight, 100) + 'px';
-    });
+  document.getElementById('taskIn').addEventListener('keydown', e => {
+    if (e.key==='Enter' && !e.shiftKey) { e.preventDefault(); sendTask(); }
   });
+  document.getElementById('taskIn').addEventListener('input', function() {
+    this.style.height='auto'; this.style.height=Math.min(this.scrollHeight,100)+'px';
+  });
+  document.getElementById('meetTopic').addEventListener('keydown', e => { if(e.key==='Enter') startMeeting(); });
+  document.addEventListener('keydown', e => { if(e.key==='Escape'){closeModal();closeChat();} });
+});
 </script>
 
 </body>
