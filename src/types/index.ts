@@ -1,14 +1,43 @@
 export type AgentRole =
-  | 'hr'
-  | 'creative'
-  | 'strategy'
-  | 'meetings'
-  | 'documents'
-  | 'orchestrator';
+  | 'po'
+  | 'ceo'
+  | 'tech-lead'
+  | 'dev-backend'
+  | 'dev-frontend'
+  | 'ux'
+  | 'devops'
+  | 'data-analyst';
 
 export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent';
+export type TaskStatus = 'pending' | 'in_progress' | 'completed' | 'failed' | 'rejected';
 
-export type TaskStatus = 'pending' | 'in_progress' | 'completed' | 'failed';
+export type WorkflowStageStatus = 'pending' | 'active' | 'approved' | 'rejected' | 'done';
+
+export interface WorkflowStage {
+  agent: AgentRole;
+  label: string;
+  vaultFolder: string;
+  canApprove: boolean;        // pode aprovar/rejeitar o fluxo
+  rejectBackTo?: AgentRole;   // se rejeitar, volta para qual agente
+  next?: AgentRole;           // próximo na pipeline
+}
+
+export interface PipelineRun {
+  id: string;
+  title: string;
+  priority: TaskPriority;
+  currentStage: AgentRole;
+  stages: Array<{
+    agent: AgentRole;
+    status: WorkflowStageStatus;
+    output?: string;
+    noteCreated?: string;
+    startedAt?: string;
+    completedAt?: string;
+  }>;
+  createdAt: string;
+  completedAt?: string;
+}
 
 export interface VaultNote {
   path: string;
@@ -27,6 +56,8 @@ export interface AgentTask {
   priority: TaskPriority;
   status: TaskStatus;
   assignedTo: AgentRole;
+  pipelineId?: string;
+  previousOutput?: string;    // output do agente anterior no pipeline
   context?: Record<string, unknown>;
   result?: string;
   vaultNotesCreated?: string[];
@@ -34,29 +65,19 @@ export interface AgentTask {
   completedAt?: string;
 }
 
-export interface AgentMessage {
-  from: AgentRole;
-  to: AgentRole | 'all';
-  subject: string;
-  content: string;
-  taskId?: string;
-  timestamp: string;
-}
-
-export interface AgentContext {
-  companyName: string;
-  currentDate: string;
-  recentDecisions: VaultNote[];
-  teamMembers: VaultNote[];
-  recentMeetings: VaultNote[];
-  relevantNotes: VaultNote[];
+export interface AgentDecision {
+  approved: boolean;
+  reasoning: string;
+  feedback?: string;          // se rejeitou, o que precisa mudar
 }
 
 export interface OrchestratorRequest {
   task: string;
   priority?: TaskPriority;
   context?: string;
-  involveAgents?: AgentRole[];
+  mode?: 'pipeline' | 'direct';  // pipeline = fluxo completo, direct = agente específico
+  startFrom?: AgentRole;          // onde começar no pipeline
+  involveAgents?: AgentRole[];    // modo direct: agentes específicos
 }
 
 export interface OrchestratorResult {
@@ -66,4 +87,5 @@ export interface OrchestratorResult {
   notesCreated: string[];
   decisions: string[];
   nextSteps: string[];
+  pipeline?: PipelineRun;
 }

@@ -498,153 +498,38 @@ function spriteToSVG(rows, pal, scale) {
 }
 
 // ═══ Character Sprites (12x18 grid) ═══
+// Paletas únicas por função na equipe Dattu
+
+const BASE_ROWS = [
+  '...oooooo...',
+  '..ohhhhho...',
+  '..ohhHhho...',
+  '.ohsssssho..',
+  '.ohse.esho..',
+  '.ohsssssho..',
+  '..ossmssso..',
+  '...ossso....',
+  '..oBBBBBo...',
+  '.oaBBBBBao..',
+  '.oabBBBbao..',
+  '..oBBBBBo...',
+  '...oBBBo....',
+  '..opp.ppo...',
+  '..opp.ppo...',
+  '..opp.ppo...',
+  '..oxx.xxo...',
+  '...oo.oo....',
+];
 
 const CHAR_SPRITES = {
-  hr: {
-    rows: [
-      '...oooooo...',
-      '..ohhhhho...',
-      '.ohhHHHhho..',
-      '.ohsssssho..',
-      '.ohse.esho..',
-      '.ohsssssho..',
-      '..ossmssso..',
-      '...ossso....',
-      '..oBBBBBo...',
-      '.oaBBBBBao..',
-      '.oabBBBbao..',
-      '..oBBBBBo...',
-      '...oBBBo....',
-      '..opp.ppo...',
-      '..opp.ppo...',
-      '..opp.ppo...',
-      '..oxx.xxo...',
-      '...oo.oo....',
-    ],
-    pal: {
-      o:'#2a1a0a', h:'#7c3a10', H:'#a05020',
-      s:'#fcd5b0', a:'#eec5a0',
-      e:'#1a1a2e', m:'#cc7070',
-      B:'#16a34a', b:'#22c55e',
-      p:'#374151', x:'#1e293b',
-    },
-  },
-  creative: {
-    rows: [
-      '...oooooo...',
-      '..ohhhhhho..',
-      '..ohHhHhho..',
-      '.ohsssssho..',
-      '.ohse.esho..',
-      '.ohsssssho..',
-      '..ossmssso..',
-      '...ossso....',
-      '..oBBBBBo...',
-      '.oaBBBBBao..',
-      '.oabBBBbao..',
-      '..oBBBBBo...',
-      '...oBBBo....',
-      '..opp.ppo...',
-      '..opp.ppo...',
-      '..opp.ppo...',
-      '..oxx.xxo...',
-      '...oo.oo....',
-    ],
-    pal: {
-      o:'#1a0a1a', h:'#1a1a2e', H:'#2d2d4a',
-      s:'#f0c090', a:'#e0b080',
-      e:'#1a1a2e', m:'#cc7070',
-      B:'#be185d', b:'#ec4899',
-      p:'#1e3a5f', x:'#94a3b8',
-    },
-  },
-  strategy: {
-    rows: [
-      '...oooooo...',
-      '..ohhhhho...',
-      '..ohhhhho...',
-      '.ohsssssho..',
-      '.ohse.esho..',
-      '.ohsssssho..',
-      '..ossmssso..',
-      '...ossso....',
-      '..oBBBBBo...',
-      '.oaBBBBBao..',
-      '.oabBBBbao..',
-      '..oBBBBBo...',
-      '...oBBBo....',
-      '..opp.ppo...',
-      '..opp.ppo...',
-      '..opp.ppo...',
-      '..oxx.xxo...',
-      '...oo.oo....',
-    ],
-    pal: {
-      o:'#0a0a1a', h:'#2d1f0e', H:'#4a3520',
-      s:'#fcd5b0', a:'#eec5a0',
-      e:'#1a1a2e', m:'#cc8070',
-      B:'#4338ca', b:'#6366f1',
-      p:'#1e1b4b', x:'#5c3d1e',
-    },
-  },
-  meetings: {
-    rows: [
-      '...oooooo...',
-      '..ohhhhhho..',
-      '.ohhHHHhho..',
-      '.ohhssssho..',
-      '.ohse.esho..',
-      '.ohsssssho..',
-      '..ossmssso..',
-      '...ossso....',
-      '..oBBBBBo...',
-      '.oaBBBBBao..',
-      '.oabBBBbao..',
-      '..oBBBBBo...',
-      '...oBBBo....',
-      '..opp.ppo...',
-      '..opp.ppo...',
-      '..opp.ppo...',
-      '..oxx.xxo...',
-      '...oo.oo....',
-    ],
-    pal: {
-      o:'#1a0a00', h:'#92400e', H:'#b45309',
-      s:'#fddba6', a:'#edcb96',
-      e:'#1a1a2e', m:'#cc7070',
-      B:'#b45309', b:'#f59e0b',
-      p:'#4a3728', x:'#1e293b',
-    },
-  },
-  documents: {
-    rows: [
-      '...oooooo...',
-      '..ohhhhho...',
-      '..ohhhhho...',
-      '.ohsssssho..',
-      '.ohge.egho..',
-      '.ohsssssho..',
-      '..ossmssso..',
-      '...ossso....',
-      '..oBBBBBo...',
-      '.oaBBBBBao..',
-      '.oabBBBbao..',
-      '..oBBBBBo...',
-      '...oBBBo....',
-      '..opp.ppo...',
-      '..opp.ppo...',
-      '..opp.ppo...',
-      '..oxx.xxo...',
-      '...oo.oo....',
-    ],
-    pal: {
-      o:'#0a0a15', h:'#1e293b', H:'#334155',
-      s:'#fcd5b0', a:'#eec5a0',
-      e:'#1a1a2e', g:'#64748b', m:'#cc8080',
-      B:'#1d4ed8', b:'#3b82f6',
-      p:'#1e293b', x:'#111827',
-    },
-  },
+  'po':           { rows: BASE_ROWS, pal: { o:'#0a1020', h:'#5c3a1a', H:'#7a5030', s:'#fcd5b0', a:'#eec5a0', e:'#1a1a2e', m:'#cc7070', B:'#0369a1', b:'#0ea5e9', p:'#1e3a5f', x:'#1e293b' } },
+  'ceo':          { rows: BASE_ROWS, pal: { o:'#0a0a0a', h:'#2d1f0e', H:'#4a3520', s:'#fad0a0', a:'#eac090', e:'#1a1a2e', m:'#aaaaaa', B:'#1e293b', b:'#475569', p:'#0f172a', x:'#0f172a' } },
+  'data-analyst': { rows: BASE_ROWS, pal: { o:'#0a0a1a', h:'#1a3a5f', H:'#2a4a7f', s:'#f0d0a0', a:'#e0c090', e:'#7c3aed', m:'#70dd70', B:'#6d28d9', b:'#a855f7', p:'#1e1b4b', x:'#1e293b' } },
+  'dev-backend':  { rows: BASE_ROWS, pal: { o:'#050505', h:'#111827', H:'#1f2937', s:'#fcd5b0', a:'#eec5a0', e:'#1a1a2e', m:'#4ade80', B:'#111827', b:'#374151', p:'#030712', x:'#030712' } },
+  'dev-frontend': { rows: BASE_ROWS, pal: { o:'#0a0a1a', h:'#3b1054', H:'#5a1a7a', s:'#ffd0a0', a:'#eec090', e:'#1a1a2e', m:'#f472b6', B:'#7c3aed', b:'#ec4899', p:'#1e1b4b', x:'#4a1d96' } },
+  'ux':           { rows: BASE_ROWS, pal: { o:'#1a0a00', h:'#a05020', H:'#c07040', s:'#fde0b0', a:'#edd0a0', e:'#1a1a2e', m:'#fb923c', B:'#b45309', b:'#f59e0b', p:'#4a3020', x:'#2d1a0a' } },
+  'tech-lead':    { rows: BASE_ROWS, pal: { o:'#0a1a0a', h:'#1a3020', H:'#2a4030', s:'#fcd5b0', a:'#eec5a0', e:'#1a1a2e', m:'#4ade80', B:'#065f46', b:'#059669', p:'#022c22', x:'#1e293b' } },
+  'devops':       { rows: BASE_ROWS, pal: { o:'#1a0500', h:'#4a1a0a', H:'#6a2a1a', s:'#fcd0a0', a:'#eec090', e:'#1a1a2e', m:'#f87171', B:'#991b1b', b:'#ef4444', p:'#450a0a', x:'#1e293b' } },
 };
 
 // ═══ Desk Sprite (20x12) ═══
@@ -738,65 +623,89 @@ const BOARD_SPRITE = {
 
 // ═══ Agent Config ═══
 const AG = {
-  hr:        { name:'Ana',  role:'RH',              color:'#22c55e', emoji:'👔', label:'RH' },
-  creative:  { name:'Leo',  role:'Design & Conteúdo',color:'#ec4899', emoji:'🎨', label:'Criativo' },
-  strategy:  { name:'Max',  role:'Estratégia',       color:'#6366f1', emoji:'♟️', label:'Estratégia' },
-  meetings:  { name:'Maya', role:'Facilitação',      color:'#f59e0b', emoji:'📋', label:'Reuniões' },
-  documents: { name:'Alex', role:'Conhecimento',     color:'#3b82f6', emoji:'📚', label:'Docs' },
+  'po':           { name:'PO',        role:'Product Owner',       color:'#0ea5e9', emoji:'📋', label:'PO' },
+  'ceo':          { name:'CEO',       role:'CEO',                 color:'#475569', emoji:'👔', label:'CEO' },
+  'data-analyst': { name:'Analista',  role:'Analista de Dados',   color:'#a855f7', emoji:'📊', label:'Analista' },
+  'dev-backend':  { name:'Backend',   role:'DEV Backend Sênior',  color:'#374151', emoji:'⚙️', label:'Backend' },
+  'dev-frontend': { name:'Frontend',  role:'DEV Frontend Sênior', color:'#ec4899', emoji:'🎨', label:'Frontend' },
+  'ux':           { name:'UX',        role:'UX Designer',         color:'#f59e0b', emoji:'✏️', label:'UX' },
+  'tech-lead':    { name:'TechLead',  role:'Tech Lead',           color:'#059669', emoji:'🔍', label:'TechLead' },
+  'devops':       { name:'DevOps',    role:'DevOps Engineer',     color:'#ef4444', emoji:'🚀', label:'DevOps' },
 };
 
 const VAULT_META = {
-  Decisoes:{ e:'⚡', l:'Decisões'}, Time:{ e:'👥', l:'Time'},
-  Reunioes:{ e:'📋', l:'Reuniões'}, Criativos:{ e:'🎨', l:'Criativos'},
-  Processos:{ e:'⚙️', l:'Processos'}, Ideias:{ e:'💡', l:'Ideias'},
+  Backlog:    { e:'📋', l:'Backlog' },
+  Decisoes:   { e:'⚡', l:'Decisões' },
+  Analises:   { e:'📊', l:'Análises' },
+  Sprints:    { e:'💻', l:'Sprints' },
+  Design:     { e:'✏️', l:'Design' },
+  Reviews:    { e:'🔍', l:'Reviews' },
+  Arquitetura:{ e:'🏗️', l:'Arquitetura' },
+  Deploy:     { e:'🚀', l:'Deploy' },
 };
 
-// ═══ Office Layout (pixel coords within 820x560) ═══
+// ═══ Office Layout — 8 agentes (820x560) ═══
+// Linha 1 (topo): PO, CEO | [Sala de Reuniões] | Frontend, UX
+// Linha 2 (base): Analista, Backend | [Sala de Reuniões] | TechLead, DevOps
 const LAYOUT = {
   desks: {
-    hr:        { x: 50,  y: 100 },
-    creative:  { x: 580, y: 100 },
-    strategy:  { x: 50,  y: 360 },
-    meetings:  { x: 580, y: 360 },
-    documents: { x: 320, y: 420 },
+    'po':           { x: 15,  y: 65  },
+    'ceo':          { x: 125, y: 65  },
+    'dev-frontend': { x: 575, y: 65  },
+    'ux':           { x: 685, y: 65  },
+    'data-analyst': { x: 15,  y: 390 },
+    'dev-backend':  { x: 125, y: 390 },
+    'tech-lead':    { x: 575, y: 390 },
+    'devops':       { x: 685, y: 390 },
   },
   chars: {
-    hr:        { x: 145, y: 72  },
-    creative:  { x: 675, y: 72  },
-    strategy:  { x: 145, y: 332 },
-    meetings:  { x: 675, y: 332 },
-    documents: { x: 415, y: 392 },
+    'po':           { x: 20,  y: 38  },
+    'ceo':          { x: 130, y: 38  },
+    'dev-frontend': { x: 580, y: 38  },
+    'ux':           { x: 690, y: 38  },
+    'data-analyst': { x: 20,  y: 363 },
+    'dev-backend':  { x: 130, y: 363 },
+    'tech-lead':    { x: 580, y: 363 },
+    'devops':       { x: 690, y: 363 },
   },
   chairs: {
-    hr:        { x: 70,  y: 155 },
-    creative:  { x: 600, y: 155 },
-    strategy:  { x: 70,  y: 415 },
-    meetings:  { x: 600, y: 415 },
-    documents: { x: 340, y: 475 },
+    'po':           { x: 35,  y: 115 },
+    'ceo':          { x: 145, y: 115 },
+    'dev-frontend': { x: 595, y: 115 },
+    'ux':           { x: 705, y: 115 },
+    'data-analyst': { x: 35,  y: 440 },
+    'dev-backend':  { x: 145, y: 440 },
+    'tech-lead':    { x: 595, y: 440 },
+    'devops':       { x: 705, y: 440 },
   },
   monitors: {
-    hr:        { x: 72,  y: 90 },
-    creative:  { x: 602, y: 90 },
-    strategy:  { x: 72,  y: 350 },
-    meetings:  { x: 602, y: 350 },
-    documents: { x: 342, y: 410 },
+    'po':           { x: 37,  y: 55  },
+    'ceo':          { x: 147, y: 55  },
+    'dev-frontend': { x: 597, y: 55  },
+    'ux':           { x: 707, y: 55  },
+    'data-analyst': { x: 37,  y: 380 },
+    'dev-backend':  { x: 147, y: 380 },
+    'tech-lead':    { x: 597, y: 380 },
+    'devops':       { x: 707, y: 380 },
   },
-  meetingRoom: { x: 255, y: 130, w: 310, h: 230 },
-  meetingTable: { x: 340, y: 205, w: 140, h: 90 },
+  meetingRoom:  { x: 255, y: 130, w: 310, h: 220 },
+  meetingTable: { x: 340, y: 200, w: 140, h: 90  },
   meetingSpots: [
-    { x: 285, y: 295 },
-    { x: 365, y: 295 },
-    { x: 445, y: 295 },
+    { x: 275, y: 290 },
+    { x: 345, y: 290 },
+    { x: 415, y: 290 },
+    { x: 485, y: 290 },
+    { x: 555, y: 290 },
   ],
   plants: [
-    { x: 10, y: 38 },
-    { x: 770, y: 38 },
-    { x: 10,  y: 490 },
-    { x: 770, y: 490 },
-    { x: 240, y: 38 },
-    { x: 540, y: 38 },
+    { x: 0,   y: 38  },
+    { x: 776, y: 38  },
+    { x: 0,   y: 490 },
+    { x: 776, y: 490 },
+    { x: 240, y: 38  },
+    { x: 540, y: 38  },
   ],
-  whiteboard: { x: 340, y: 40 },
+  whiteboard: { x: 340, y: 42 },
 };
 
 // ═══ State ═══
@@ -813,7 +722,7 @@ socket.on('vault:stats', renderVault);
 
 socket.on('log', d => addFeed(d.level, d.message));
 socket.on('task:start', d => { setProc(true); addFeed('working','🚀 '+d.task); });
-socket.on('task:routed', d => { addFeed('info','🔀 → '+d.agents.map(r=>AG[r]?.name||r).join(', ')); });
+socket.on('task:routed', d => { if(d.agents) addFeed('info','🔀 → '+d.agents.map(r=>AG[r]?.name||r).join(', ')); });
 
 socket.on('agent:start', d => {
   setCS(d.role,'working');
@@ -830,6 +739,15 @@ socket.on('agent:error', d => {
   setCS(d.role,'error');
   showBub(d.role,'Erro!',3000);
   addFeed('error','❌ '+d.name+': '+d.error);
+});
+socket.on('pipeline:stage', d => {
+  const label = d.label || d.stage;
+  addFeed('info', '⚡ Pipeline: ' + label + ' → ' + (AG[d.stage]?.name || d.stage));
+});
+socket.on('agent:rejected', d => {
+  setCS(d.role,'error');
+  showBub(d.role,'Rejeitado!',3000);
+  addFeed('error','🔙 ' + (AG[d.role]?.name||d.role) + ' rejeitou: ' + (d.feedback||'').slice(0,80));
 });
 socket.on('task:done', d => {
   setProc(false);
@@ -1100,7 +1018,7 @@ function startMeeting() {
   closeModal();
   document.getElementById('meetTopic').value = '';
   addFeed('working','🤝 Reunião: '+t);
-  ['strategy','hr','creative'].forEach((r,i) => {
+  ['po','ceo','tech-lead'].forEach((r,i) => {
     const el = document.getElementById(`ch-${r}`);
     if (!el) return;
     const sp = LAYOUT.meetingSpots[i];

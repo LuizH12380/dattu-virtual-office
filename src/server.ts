@@ -27,14 +27,17 @@ async function main(): Promise<void> {
   const obsidian = new ObsidianService();
   const orchestrator = new Orchestrator(obsidian);
 
-  // ─── Servir frontend estático ──────────────────────────────────────────────
   app.use(express.json());
   app.use(express.static(path.join(__dirname, '..', 'public')));
 
-  // ─── REST endpoints ────────────────────────────────────────────────────────
+  // ─── REST ──────────────────────────────────────────────────────────────────
 
   app.get('/api/agents', (_req, res) => {
     res.json(orchestrator.listAgents());
+  });
+
+  app.get('/api/pipeline', (_req, res) => {
+    res.json(orchestrator.getPipeline());
   });
 
   app.get('/api/vault/stats', (_req, res) => {
@@ -53,10 +56,13 @@ async function main(): Promise<void> {
   });
 
   app.post('/api/task', async (req, res) => {
-    const { task, priority, context } = req.body as {
+    const { task, priority, context, mode, startFrom, involveAgents } = req.body as {
       task: string;
       priority?: string;
       context?: string;
+      mode?: 'pipeline' | 'direct';
+      startFrom?: AgentRole;
+      involveAgents?: AgentRole[];
     };
 
     if (!task?.trim()) {
@@ -69,6 +75,9 @@ async function main(): Promise<void> {
         task,
         priority: (priority ?? 'medium') as 'low' | 'medium' | 'high' | 'urgent',
         context,
+        mode,
+        startFrom,
+        involveAgents,
       });
       res.json(result);
     } catch (err) {
@@ -77,71 +86,32 @@ async function main(): Promise<void> {
     }
   });
 
-  app.post('/api/meeting', async (req, res) => {
-    const { topic, participants } = req.body as {
-      topic: string;
-      participants?: AgentRole[];
-    };
-
-    if (!topic?.trim()) {
-      res.status(400).json({ error: 'Campo "topic" é obrigatório' });
-      return;
-    }
-
-    try {
-      const result = await orchestrator.holdMeeting(
-        topic,
-        participants ?? ['strategy', 'hr', 'creative'],
-      );
-      res.json(result);
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      res.status(500).json({ error: msg });
-    }
-  });
-
-  // ─── Socket.IO — chat em tempo real ───────────────────────────────────────
+  // ─── Socket.IO ────────────────────────────────────────────────────────────
 
   const chatHistories = new Map<string, Anthropic.MessageParam[]>();
 
   io.on('connection', (socket) => {
-    // Envia estado inicial
     socket.emit('vault:stats', orchestrator.getVaultStats());
     socket.emit('agents:list', orchestrator.listAgents());
+    socket.emit('pipeline:definition', orchestrator.getPipeline());
 
-    socket.on('task:submit', async (data: { task: string; priority?: string; context?: string }) => {
+    socket.on('task:submit', async (data: { task: string; priority?: string; context?: string; mode?: 'pipeline' | 'direct'; startFrom?: AgentRole; involveAgents?: AgentRole[] }) => {
       if (!data.task?.trim()) return;
-
       try {
         await orchestrator.process({
           task: data.task,
           priority: (data.priority ?? 'medium') as 'low' | 'medium' | 'high' | 'urgent',
           context: data.context,
+          mode: data.mode ?? 'pipeline',
+          startFrom: data.startFrom,
+          involveAgents: data.involveAgents,
         });
-        // Atualiza stats do vault após tarefa
-        socket.emit('vault:stats', orchestrator.getVaultStats());
       } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
-        socket.emit('error', { message: msg });
+        socket.emit('error', { message: err instanceof Error ? err.message : String(err) });
       }
     });
 
-    socket.on('meeting:start', async (data: { topic: string; participants?: AgentRole[] }) => {
-      if (!data.topic?.trim()) return;
-
-      try {
-        await orchestrator.holdMeeting(
-          data.topic,
-          data.participants ?? ['strategy', 'hr', 'creative'],
-        );
-        socket.emit('vault:stats', orchestrator.getVaultStats());
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
-        socket.emit('error', { message: msg });
-      }
-    });
-
-    socket.on('chat:message', async (data: { role: AgentRole; message: string; sessionId: string }) => {
+    socket.on('chat:message', async (data: { role: AgentRole; message: string }) => {
       if (!data.message?.trim() || !data.role) return;
 
       const historyKey = `${socket.id}-${data.role}`;
@@ -149,54 +119,41 @@ async function main(): Promise<void> {
 
       try {
         socket.emit('agent:typing', { role: data.role });
-
-        let fullResponse = '';
-        // Streaming via agent.chat (já faz o stream internamente, aqui capturamos o resultado)
         const response = await orchestrator.chatWithAgent(data.role, data.message, history);
-        fullResponse = response;
-
         history.push({ role: 'user', content: data.message });
-        history.push({ role: 'assistant', content: fullResponse });
+        history.push({ role: 'assistant', content: response });
         chatHistories.set(historyKey, history.slice(-20));
-
-        socket.emit('chat:response', { role: data.role, message: fullResponse });
+        socket.emit('chat:response', { role: data.role, message: response });
       } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
-        socket.emit('error', { message: msg });
+        socket.emit('error', { message: err instanceof Error ? err.message : String(err) });
       }
     });
 
     socket.on('disconnect', () => {
-      // Limpa histórico do cliente
       for (const key of chatHistories.keys()) {
         if (key.startsWith(socket.id)) chatHistories.delete(key);
       }
     });
   });
 
-  // ─── Repassa eventos do Orchestrator para Socket.IO ───────────────────────
+  // ─── Repassa eventos do Orchestrator → Socket.IO ──────────────────────────
 
-  orchestrator.on('log', (data) => {
-    io.emit('log', { ...data, timestamp: new Date().toISOString() });
-  });
-
-  orchestrator.on('task:start', (data) => io.emit('task:start', data));
-  orchestrator.on('task:routed', (data) => io.emit('task:routed', data));
-  orchestrator.on('task:done', (data) => {
-    io.emit('task:done', data);
-    io.emit('vault:stats', orchestrator.getVaultStats());
-  });
-
-  orchestrator.on('agent:start', (data) => io.emit('agent:start', data));
-  orchestrator.on('agent:done', (data) => io.emit('agent:done', data));
-  orchestrator.on('agent:error', (data) => io.emit('agent:error', data));
-  orchestrator.on('note:created', (data) => io.emit('note:created', data));
-
-  // ─── Inicia servidor ───────────────────────────────────────────────────────
+  orchestrator.on('log',              (d) => io.emit('log', { ...d, timestamp: new Date().toISOString() }));
+  orchestrator.on('task:start',       (d) => io.emit('task:start', d));
+  orchestrator.on('task:done',        (d) => { io.emit('task:done', d); io.emit('vault:stats', orchestrator.getVaultStats()); });
+  orchestrator.on('pipeline:start',   (d) => io.emit('pipeline:start', d));
+  orchestrator.on('pipeline:stage',   (d) => io.emit('pipeline:stage', d));
+  orchestrator.on('pipeline:done',    (d) => io.emit('pipeline:done', d));
+  orchestrator.on('agent:start',      (d) => io.emit('agent:start', d));
+  orchestrator.on('agent:done',       (d) => io.emit('agent:done', d));
+  orchestrator.on('agent:error',      (d) => io.emit('agent:error', d));
+  orchestrator.on('agent:rejected',   (d) => io.emit('agent:rejected', d));
+  orchestrator.on('note:created',     (d) => io.emit('note:created', d));
+  orchestrator.on('vault:stats',      (d) => io.emit('vault:stats', d));
 
   httpServer.listen(PORT, () => {
     console.log(`\n╔══════════════════════════════════════════════╗`);
-    console.log(`║  Escritório Virtual — ${(process.env.COMPANY_NAME ?? 'Dattu').padEnd(21)}║`);
+    console.log(`║  Dattu Core Team — Escritório Virtual        ║`);
     console.log(`║  http://localhost:${PORT}                      ║`);
     console.log(`╚══════════════════════════════════════════════╝\n`);
   });

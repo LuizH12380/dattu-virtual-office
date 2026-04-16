@@ -108,7 +108,7 @@ async function startREPL(orchestrator: Orchestrator, obsidian: ObsidianService):
       // ── Comandos do escritório ──────────────────────────────────────────
       if (input.startsWith('/chat ')) {
         const role = input.slice(6).trim() as AgentRole;
-        const validRoles: AgentRole[] = ['hr', 'creative', 'strategy', 'meetings', 'documents'];
+        const validRoles: AgentRole[] = ['po', 'ceo', 'data-analyst', 'dev-backend', 'dev-frontend', 'ux', 'tech-lead', 'devops'];
         if (!validRoles.includes(role)) {
           console.log(`\nAgente inválido. Use: ${validRoles.join(', ')}`);
         } else {
@@ -126,7 +126,7 @@ async function startREPL(orchestrator: Orchestrator, obsidian: ObsidianService):
 
       } else if (input.startsWith('/reunião ') || input.startsWith('/reuniao ')) {
         const topic = input.replace(/^\/reuni[ãa]o\s+/, '').trim();
-        const result = await orchestrator.holdMeeting(topic, ['strategy', 'hr', 'creative']);
+        const result = await orchestrator.process({ task: `Reunião sobre: ${topic}`, priority: 'high', involveAgents: ['po', 'ceo', 'tech-lead'], mode: 'direct' });
         printResult(result);
 
       } else if (input.startsWith('/buscar ')) {
