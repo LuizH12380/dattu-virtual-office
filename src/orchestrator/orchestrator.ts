@@ -80,6 +80,12 @@ export class Orchestrator extends EventEmitter {
       const agent = this.agents.get(currentAgentRole);
       if (!agent) { currentAgentRole = stage.next; continue; }
 
+      if (!agent.active) {
+        this.emit('log', { level: 'info', message: `[${stage.label}] Agente desativado — pulando.` });
+        currentAgentRole = stage.next;
+        continue;
+      }
+
       this.updateStageStatus(pipeline, currentAgentRole, 'active');
       this.emit('pipeline:stage', { taskId, stage: currentAgentRole, label: stage.label, pipeline });
       this.emit('agent:start', { taskId, role: currentAgentRole, name: agent.name });

@@ -387,6 +387,75 @@
     @media (max-width: 1100px) {
       .office { width: 600px; height: 420px; }
     }
+
+    /* ═══ Vault Graph Overlay ═══ */
+    #vaultGraphOverlay {
+      position: fixed; inset: 0; z-index: 100;
+      background: #06030f;
+      display: none; flex-direction: column;
+    }
+    #vaultGraphOverlay.open { display: flex; }
+    .vg-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 8px 14px; background: rgba(10,5,20,.9);
+      border-bottom: 1px solid #2a1d4a; flex-shrink: 0; gap: 10px;
+    }
+    .vg-title { font-family: 'Press Start 2P', monospace; font-size: 9px; color: #c084fc; white-space: nowrap; }
+    .vg-filters { display: flex; gap: 5px; flex-wrap: wrap; flex: 1; }
+    .vg-f {
+      padding: 3px 8px; border-radius: 10px;
+      border: 1px solid rgba(255,255,255,.18); background: rgba(255,255,255,.06);
+      color: #aaa; font-size: 9px; cursor: pointer; transition: all .15s;
+      font-family: inherit;
+    }
+    .vg-f.active { background: rgba(124,111,247,.2); color: #fff; }
+    .vg-f:not(.active) { opacity: .45; }
+    .vg-body { display: flex; flex: 1; overflow: hidden; }
+    #graphCanvas { flex: 1; }
+    #notePanel {
+      width: 0; overflow: hidden; transition: width .25s ease;
+      background: rgba(12,6,26,.97); border-left: 1px solid #2a1d4a;
+      display: flex; flex-direction: column; position: relative;
+    }
+    #notePanel.open { width: 340px; }
+    .np-head { padding: 12px 14px 10px; border-bottom: 1px solid #2a1d4a; flex-shrink: 0; }
+    .np-title { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+    .np-meta { font-size: 10px; color: var(--text-muted); display: flex; gap: 6px; flex-wrap: wrap; }
+    .np-tag { padding: 2px 6px; border-radius: 3px; background: rgba(255,255,255,.08); }
+    .np-body { flex: 1; overflow-y: auto; padding: 12px 14px; font-size: 12px; line-height: 1.65; color: var(--text); }
+    .np-body h1,.np-body h2,.np-body h3 { font-size: 12px; color: var(--accent); margin: 10px 0 4px; }
+    .np-body p { margin-bottom: 6px; }
+    .np-body ul,.np-body ol { padding-left: 16px; margin-bottom: 6px; }
+    .np-body code { background: rgba(255,255,255,.1); padding: 1px 4px; border-radius: 2px; font-size: 10px; }
+    .np-body pre { background: rgba(255,255,255,.06); padding: 8px; border-radius: 4px; overflow-x: auto; }
+    .np-body blockquote { border-left: 3px solid var(--accent); padding-left: 8px; color: var(--text-muted); }
+    .np-close { position: absolute; top: 8px; right: 10px; background: none; border: none; color: var(--text-muted); font-size: 16px; cursor: pointer; line-height: 1; }
+    .np-close:hover { color: var(--text); }
+
+    /* ═══ Agent Controls ═══ */
+    .ac-row { display:flex; align-items:center; gap:6px; padding:5px 0; border-bottom:1px solid rgba(58,45,85,.35); }
+    .ac-row:last-child { border-bottom:none; }
+    .ac-info { flex:1; min-width:0; overflow:hidden; }
+    .ac-name { font-size:10px; font-weight:600; color:var(--text); }
+    .ac-role { font-size:8px; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .ac-toggle {
+      width:26px; height:15px; border-radius:8px; border:none; cursor:pointer;
+      position:relative; flex-shrink:0; transition:background .2s;
+    }
+    .ac-toggle.on { background:#4ade80; }
+    .ac-toggle.off { background:#4a3d55; }
+    .ac-toggle::after {
+      content:''; position:absolute; width:11px; height:11px;
+      border-radius:50%; background:#fff; top:2px; transition:left .2s;
+      box-shadow:0 1px 2px rgba(0,0,0,.3);
+    }
+    .ac-toggle.on::after { left:13px; }
+    .ac-toggle.off::after { left:2px; }
+
+    /* ═══ Phaser canvas ═══ */
+    #office canvas { display: block; }
+    .btn-neural { background: linear-gradient(135deg,#2a1060,#1a0840); border: 1px solid #7c6ff7; color: #c084fc; font-size: 8px; padding: 3px 7px; float: right; margin-top: -2px; }
+    .btn-neural:hover { background: rgba(124,111,247,.3); color: #e0d4ff; }
   </style>
 </head>
 <body>
@@ -428,8 +497,12 @@
       <div class="prog"><div class="prog-fill" id="progFill"></div></div>
     </div>
     <div class="sb-sec">
-      <div class="sb-label">Vault</div>
+      <div class="sb-label">Vault <button class="btn btn-neural" onclick="openVaultGraph()">🧠 Rede Neural</button></div>
       <div class="vault-row" id="vaultRow"></div>
+    </div>
+    <div class="sb-sec" style="padding:8px 12px 6px; flex-shrink:0; max-height:230px; overflow-y:auto;">
+      <div class="sb-label">Time</div>
+      <div id="agentControls"></div>
     </div>
     <div class="feed-lbl">Atividade</div>
     <div class="feed" id="feed">
@@ -755,185 +828,279 @@ socket.on('task:done', d => {
   addFeed('success','✨ Concluído — '+(d.notesCreated?.length||0)+' nota(s)');
   if(d.summary) addFeed('info','📋 '+d.summary.slice(0,140));
 });
-socket.on('note:created', d => addFeed('note','📝 '+d.path));
+socket.on('note:created', d => {
+  addFeed('note','📝 '+d.path);
+  if (document.getElementById('vaultGraphOverlay').classList.contains('open')) {
+    setTimeout(refreshGraph, 1200);
+  }
+});
 socket.on('agent:typing', () => showTyp());
 socket.on('chat:response', d => { hideTyp(); addCM('agent',d.role,d.message); enCI(); });
 socket.on('error', d => { setProc(false); addFeed('error','❌ '+d.message); });
+socket.on('agent:activated',   d => { const b=document.getElementById(`tog-${d.role}`); if(b){b.classList.add('on');b.classList.remove('off');} addFeed('success','✅ '+d.name+' ativado'); });
+socket.on('agent:deactivated', d => { const b=document.getElementById(`tog-${d.role}`); if(b){b.classList.remove('on');b.classList.add('off');} addFeed('info','⏸ '+d.name+' desativado'); });
 
-// ═══ Render Office ═══
-function renderOffice() {
-  const ofc = document.getElementById('office');
+// ═══ Phaser Office ═══
+let phaserGame = null;
+window.agentSprites = {};
 
-  // Carpet / meeting room
-  const mr = LAYOUT.meetingRoom;
-  const carpet = document.createElement('div');
-  carpet.className = 'carpet';
-  carpet.style.cssText = `left:${mr.x}px;top:${mr.y}px;width:${mr.w}px;height:${mr.h}px;z-index:2;`;
-  carpet.innerHTML = '<div class="carpet-label">Sala de Reuniões</div>';
-  ofc.appendChild(carpet);
+class AgentSprite {
+  constructor(scene, role, meta, homeX, homeY) {
+    this.scene = scene; this.role = role; this.meta = meta;
+    this.homeX = homeX; this.homeY = homeY;
+    this.state = 'idle'; this.bubble = null; this.bubbleTimer = null;
+    this.idleTween = null; this.workTween = null;
 
-  // Meeting table
-  const mt = LAYOUT.meetingTable;
-  const tbl = document.createElement('div');
-  tbl.className = 'mtable';
-  tbl.style.cssText = `left:${mt.x}px;top:${mt.y}px;width:${mt.w}px;height:${mt.h}px;z-index:3;`;
-  ofc.appendChild(tbl);
+    const color = parseInt(meta.color.replace('#',''), 16);
+    this.color = color;
 
-  // Whiteboard
-  const wb = LAYOUT.whiteboard;
-  const wbEl = document.createElement('div');
-  wbEl.className = 'furniture';
-  wbEl.style.cssText = `left:${wb.x}px;top:${wb.y}px;z-index:3;`;
-  wbEl.innerHTML = spriteToSVG(BOARD_SPRITE.rows, BOARD_SPRITE.pal, 3);
-  ofc.appendChild(wbEl);
+    this.ctr = scene.add.container(homeX, homeY);
 
-  // Plants
-  LAYOUT.plants.forEach(p => {
-    const el = document.createElement('div');
-    el.className = 'furniture';
-    el.style.cssText = `left:${p.x}px;top:${p.y}px;z-index:3;`;
-    el.innerHTML = spriteToSVG(PLANT_SPRITE.rows, PLANT_SPRITE.pal, 3);
-    ofc.appendChild(el);
-  });
+    // Shadow
+    this.shadow = scene.add.ellipse(1, 30, 22, 7, 0x000000, 0.25);
 
-  // Desks, Chairs, Monitors, Characters
-  for (const [role, meta] of Object.entries(AG)) {
-    const dp = LAYOUT.desks[role];
-    const cp = LAYOUT.chairs[role];
-    const mp = LAYOUT.monitors[role];
-    const chp = LAYOUT.chars[role];
+    // Glow ring (shown when working/selected)
+    this.ring = scene.add.circle(0, -2, 16, color, 0.12);
 
-    // Desk
-    const desk = document.createElement('div');
-    desk.className = 'furniture';
-    desk.style.cssText = `left:${dp.x}px;top:${dp.y}px;z-index:4;`;
-    desk.innerHTML = spriteToSVG(DESK_SPRITE.rows, DESK_SPRITE.pal, 4);
-    ofc.appendChild(desk);
+    // Body
+    this.body = scene.add.graphics();
+    this._drawBody(color);
 
-    // Chair
-    const chair = document.createElement('div');
-    chair.className = 'furniture';
-    chair.style.cssText = `left:${cp.x}px;top:${cp.y}px;z-index:3;`;
-    chair.innerHTML = spriteToSVG(CHAIR_SPRITE.rows, CHAIR_SPRITE.pal, 3);
-    ofc.appendChild(chair);
+    // Head
+    this.head = scene.add.circle(0, -18, 9, 0xf5cba7);
+    this.head.setStrokeStyle(1, 0xd4a574, 1);
 
-    // Monitor
-    const mon = document.createElement('div');
-    mon.className = 'furniture';
-    mon.id = `mon-${role}`;
-    mon.style.cssText = `left:${mp.x}px;top:${mp.y}px;z-index:5;`;
-    mon.innerHTML = spriteToSVG(MONITOR_SPRITE.rows, MONITOR_SPRITE.pal, 3);
-    ofc.appendChild(mon);
+    // Eyes
+    this.eyeL = scene.add.rectangle(-3, -19, 3, 3, 0x1a1025);
+    this.eyeR = scene.add.rectangle(3,  -19, 3, 3, 0x1a1025);
 
-    // Desk label
-    const dl = document.createElement('div');
-    dl.style.cssText = `position:absolute;left:${dp.x}px;top:${dp.y+44}px;width:80px;
-      text-align:center;font-family:'Press Start 2P',monospace;font-size:5px;
-      color:#8b7860;z-index:5;pointer-events:none;`;
-    dl.textContent = meta.label;
-    ofc.appendChild(dl);
+    // Name
+    this.lbl = scene.add.text(0, 12, meta.name, {
+      fontSize: '6px', color: '#e8e0f0',
+      fontFamily: "'Press Start 2P', monospace",
+    }).setOrigin(0.5, 0);
 
-    // Character
-    const sp = CHAR_SPRITES[role];
-    const charEl = document.createElement('div');
-    charEl.className = 'char idle';
-    charEl.id = `ch-${role}`;
-    charEl.dataset.hx = chp.x;
-    charEl.dataset.hy = chp.y;
-    charEl.style.cssText = `left:${chp.x}px;top:${chp.y}px;z-index:8;`;
-    charEl.onclick = () => openChat(role);
-    charEl.innerHTML = `
-      <div style="position:relative;">
-        <div class="char-sprite">${spriteToSVG(sp.rows, sp.pal, 4)}</div>
-        <div class="char-dot idle" id="dot-${role}"></div>
-      </div>
-      <div class="char-label">${meta.name}</div>
-    `;
-    ofc.appendChild(charEl);
+    // Status dot
+    this.dot = scene.add.circle(11, -24, 5, 0x4ade80);
+    this.dot.setStrokeStyle(1.5, 0x0d0816, 1);
 
-    states[role] = { status:'idle', el:charEl };
+    this.ctr.add([this.shadow, this.ring, this.body, this.head, this.eyeL, this.eyeR, this.lbl, this.dot]);
+    this.ctr.setSize(34, 56).setInteractive({ cursor: 'pointer' });
+    this.ctr.on('pointerover', () => scene.tweens.add({ targets: this.ctr, scaleX: 1.1, scaleY: 1.1, duration: 100 }));
+    this.ctr.on('pointerout',  () => scene.tweens.add({ targets: this.ctr, scaleX: 1,   scaleY: 1,   duration: 100 }));
+    this.ctr.on('pointerdown', () => window.openChat(role));
+
+    // Idle bob
+    this._startIdleBob();
   }
+
+  _drawBody(color) {
+    this.body.clear();
+    this.body.fillStyle(color, 1);
+    this.body.fillRoundedRect(-10, -9, 20, 22, 5);
+    this.body.fillStyle(0x000000, 0.2);
+    this.body.fillRoundedRect(-7, -4, 14, 7, 2);
+  }
+
+  _startIdleBob() {
+    this.idleTween = this.scene.tweens.add({
+      targets: this.ctr, y: this.homeY - 2,
+      yoyo: true, repeat: -1,
+      duration: 800 + Math.random() * 400, ease: 'Sine.easeInOut',
+    });
+  }
+
+  setState(status) {
+    this.state = status;
+    const dotC = { idle:0x4ade80, working:0xfbbf24, done:0x4ade80, error:0xf87171, meeting:0x60a5fa };
+    this.dot.setFillStyle(dotC[status] || 0x4ade80);
+    if (this.workTween) { this.workTween.stop(); this.workTween = null; }
+    this.ring.setAlpha(0.12);
+
+    if (status === 'working') {
+      this.idleTween?.stop();
+      const dp = LAYOUT.desks[this.role];
+      this.scene.tweens.add({ targets: this.ctr, x: dp.x + 32, y: dp.y, duration: 650, ease: 'Cubic.easeInOut' });
+      this.workTween = this.scene.tweens.add({ targets: this.ring, alpha: 0.45, yoyo: true, repeat: -1, duration: 380 });
+    } else if (status === 'idle' || status === 'done') {
+      this.scene.tweens.add({
+        targets: this.ctr, x: this.homeX, y: this.homeY,
+        duration: 800, ease: 'Cubic.easeInOut',
+        delay: status === 'done' ? 400 : 0,
+        onComplete: () => this._startIdleBob(),
+      });
+    } else if (status === 'error') {
+      this.idleTween?.stop();
+      this.scene.tweens.add({
+        targets: this.ctr, x: this.ctr.x + 6, yoyo: true, repeat: 3, duration: 55,
+        onComplete: () => this._startIdleBob(),
+      });
+    }
+  }
+
+  moveToMeeting(x, y) {
+    this.idleTween?.stop(); this.state = 'meeting';
+    this.dot.setFillStyle(0x60a5fa);
+    this.scene.tweens.add({ targets: this.ctr, x, y, duration: 900, ease: 'Cubic.easeInOut' });
+  }
+
+  setSelected(sel) {
+    this.scene.tweens.add({ targets: this.ring, alpha: sel ? 0.55 : 0.12, duration: 180 });
+  }
+
+  showBubble(text, dur) {
+    if (this.bubble) { this.bubble.destroy(); this.bubble = null; }
+    if (this.bubbleTimer) clearTimeout(this.bubbleTimer);
+    const w = Math.max(60, text.length * 7 + 16);
+    const bg = this.scene.add.rectangle(0, -48, w, 20, 0xffffff, 0.93);
+    bg.setStrokeStyle(1, 0x7c6ff7, 1);
+    const txt = this.scene.add.text(0, -48, text, { fontSize: '7px', color: '#1a1025', fontFamily: 'sans-serif' }).setOrigin(0.5, 0.5);
+    this.bubble = this.scene.add.container(0, 0, [bg, txt]);
+    this.ctr.add(this.bubble);
+    if (dur > 0) this.bubbleTimer = setTimeout(() => { if (this.bubble) { this.bubble.destroy(); this.bubble = null; } }, dur);
+  }
+
+  spawnParticles() {
+    const icons = ['⚡','✨','💡','⚙️'];
+    for (let i = 0; i < 4; i++) {
+      setTimeout(() => {
+        if (!this.scene?.sys.isActive()) return;
+        const px = this.ctr.x + (Math.random() - 0.5) * 24;
+        const py = this.ctr.y - 12;
+        const p = this.scene.add.text(px, py, icons[Math.floor(Math.random()*icons.length)], { fontSize: '13px' }).setOrigin(0.5);
+        this.scene.tweens.add({ targets: p, y: py - 44, alpha: 0, duration: 900, ease: 'Quad.easeOut', onComplete: () => p.destroy() });
+      }, i * 220);
+    }
+  }
+}
+
+class OfficeScene extends Phaser.Scene {
+  constructor() { super({ key: 'OfficeScene' }); }
+
+  create() {
+    const W = 820, H = 560;
+    const g = this.add.graphics();
+
+    // Floor
+    g.fillStyle(0x5a4530, 1); g.fillRect(0, 32, W, H);
+    g.lineStyle(1, 0x4a3520, 0.55);
+    for (let x = 0; x <= W; x += 40) g.lineBetween(x, 32, x, H);
+    for (let y = 32; y <= H; y += 40) g.lineBetween(0, y, W, y);
+    g.lineStyle(1, 0x6a5540, 0.25);
+    for (let y = 48; y <= H; y += 40) g.lineBetween(0, y, W, y);
+
+    // Wall
+    g.fillGradientStyle(0x3d2d52, 0x3d2d52, 0x4a3660, 0x4a3660, 1);
+    g.fillRect(0, 0, W, 32);
+    g.lineStyle(3, 0x2a1d3a, 1); g.lineBetween(0, 32, W, 32);
+    g.lineStyle(1, 0x6a4a80, 0.35); g.lineBetween(0, 28, W, 28);
+
+    // Meeting room carpet
+    const mr = LAYOUT.meetingRoom;
+    g.fillStyle(0x2d1a4a, 1); g.fillRoundedRect(mr.x, mr.y, mr.w, mr.h, 6);
+    g.lineStyle(2, 0x7c6ff7, 0.5); g.strokeRoundedRect(mr.x, mr.y, mr.w, mr.h, 6);
+    g.lineStyle(1, 0x9d8fff, 0.18); g.strokeRoundedRect(mr.x+6, mr.y+6, mr.w-12, mr.h-12, 4);
+    this.add.text(mr.x + mr.w/2, mr.y + 12, 'Sala de Reuniões', {
+      fontSize: '7px', color: '#9d8fff', fontFamily: "'Press Start 2P', monospace"
+    }).setOrigin(0.5);
+
+    // Meeting table
+    const mt = LAYOUT.meetingTable;
+    g.fillStyle(0x3d2560, 1); g.fillRoundedRect(mt.x, mt.y, mt.w, mt.h, 8);
+    g.lineStyle(2, 0x9d7ccc, 0.6); g.strokeRoundedRect(mt.x, mt.y, mt.w, mt.h, 8);
+    g.fillStyle(0xffffff, 0.04); g.fillRoundedRect(mt.x+6, mt.y+4, mt.w-12, 10, 4);
+
+    // Meeting chairs
+    LAYOUT.meetingSpots.forEach(sp => {
+      g.fillStyle(0x4a2d6e, 1); g.fillRoundedRect(sp.x-9, sp.y-7, 18, 14, 3);
+      g.lineStyle(1, 0x7c4faa, 0.5); g.strokeRoundedRect(sp.x-9, sp.y-7, 18, 14, 3);
+    });
+
+    // Desks
+    for (const [role, dp] of Object.entries(LAYOUT.desks)) {
+      const dc = parseInt(AG[role].color.replace('#',''), 16);
+      g.fillStyle(0x7a5c38, 1); g.fillRoundedRect(dp.x, dp.y, 80, 45, 3);
+      g.lineStyle(2, 0x9a7c52, 0.6); g.strokeRoundedRect(dp.x, dp.y, 80, 45, 3);
+      g.fillStyle(0xffffff, 0.05); g.fillRoundedRect(dp.x+3, dp.y+3, 74, 8, 2);
+      // Monitor
+      g.fillStyle(0x252535, 1); g.fillRoundedRect(dp.x+20, dp.y-18, 40, 26, 3);
+      g.fillStyle(dc, 0.14); g.fillRect(dp.x+23, dp.y-15, 34, 18);
+      g.lineStyle(1, dc, 0.45); g.strokeRect(dp.x+23, dp.y-15, 34, 18);
+      g.fillStyle(0x1a1a28, 1); g.fillRect(dp.x+37, dp.y+7, 6, 4); g.fillRect(dp.x+32, dp.y+11, 16, 3);
+      // Label under desk
+      this.add.text(dp.x + 40, dp.y + 48, AG[role].label, {
+        fontSize: '5px', color: '#8b7860', fontFamily: "'Press Start 2P', monospace"
+      }).setOrigin(0.5, 0);
+    }
+
+    // Plants
+    LAYOUT.plants.forEach(p => {
+      g.fillStyle(0x166534, 1); g.fillRoundedRect(p.x+4, p.y+10, 16, 20, 3);
+      g.fillStyle(0x15803d, 1);
+      [[12,5,9],[12,0,7],[12,-4,5]].forEach(([cx,cy,r]) => g.fillCircle(p.x+cx, p.y+cy, r));
+      g.fillStyle(0x22c55e, 0.4); g.fillCircle(p.x+10, p.y-1, 4);
+    });
+
+    // Whiteboard
+    const wb = LAYOUT.whiteboard;
+    g.fillStyle(0xf0ede8, 1); g.fillRoundedRect(wb.x, wb.y, 72, 30, 2);
+    g.lineStyle(2, 0x2a1d3a, 1); g.strokeRoundedRect(wb.x, wb.y, 72, 30, 2);
+    g.lineStyle(1, 0xc084fc, 0.6);
+    [[wb.x+8,wb.y+10],[wb.x+20,wb.y+18],[wb.x+36,wb.y+12],[wb.x+52,wb.y+20]].forEach(([x,y],i,a) => { if(i>0) g.lineBetween(a[i-1][0],a[i-1][1],x,y); });
+
+    // Agent sprites
+    for (const [role, meta] of Object.entries(AG)) {
+      const chp = LAYOUT.chars[role];
+      const sp = new AgentSprite(this, role, meta, chp.x + 12, chp.y + 8);
+      window.agentSprites[role] = sp;
+      states[role] = { status: 'idle', sp };
+    }
+  }
+}
+
+function renderOffice() {
+  if (typeof Phaser === 'undefined') { setTimeout(renderOffice, 150); return; }
+  const container = document.getElementById('office');
+  container.innerHTML = '';
+  phaserGame = new Phaser.Game({
+    type: Phaser.AUTO,
+    width: 820, height: 560,
+    backgroundColor: '#0d0816',
+    parent: 'office',
+    scene: OfficeScene,
+    scale: { mode: Phaser.Scale.NONE },
+  });
 }
 
 // ═══ Character State ═══
 function setCS(role, status) {
-  const st = states[role];
-  if (!st) return;
-  const el = st.el;
-  el.className = `char ${status}`;
-  if (selAgent === role) el.classList.add('selected');
-
-  const dot = document.getElementById(`dot-${role}`);
-  if (dot) dot.className = `char-dot ${status}`;
-
-  // Monitor glow
-  const mon = document.getElementById(`mon-${role}`);
-  if (mon) {
-    const sp = MONITOR_SPRITE;
-    mon.innerHTML = spriteToSVG(sp.rows, status === 'working' ? MONITOR_ACTIVE_PAL : sp.pal, 3);
-  }
-
-  // Move char to desk when working
-  if (status === 'working') {
-    const dp = LAYOUT.desks[role];
-    el.style.left = (dp.x + 25) + 'px';
-    el.style.top = (dp.y - 10) + 'px';
-  } else if (status === 'idle' || status === 'done') {
-    el.style.left = el.dataset.hx + 'px';
-    el.style.top = el.dataset.hy + 'px';
-  }
-
-  st.status = status;
+  const sp = window.agentSprites[role];
+  if (sp) sp.setState(status);
+  if (states[role]) states[role].status = status;
   updateActive();
 }
 
 function updateActive() {
   const w = Object.values(states).filter(s => s && s.status === 'working').length;
-  document.getElementById('activeStatus').textContent =
-    w > 0 ? w + ' trabalhando' : 'Todos livres';
+  document.getElementById('activeStatus').textContent = w > 0 ? w + ' trabalhando' : 'Todos livres';
 }
 
 // ═══ Bubbles ═══
 function showBub(role, text, dur) {
-  const el = document.getElementById(`ch-${role}`);
-  if (!el) return;
-  let old = el.querySelector('.bubble');
-  if (old) old.remove();
-  const b = document.createElement('div');
-  b.className = 'bubble';
-  b.textContent = text;
-  el.appendChild(b);
-  if (bubTimers[role]) clearTimeout(bubTimers[role]);
-  if (dur > 0) bubTimers[role] = setTimeout(() => { if (b.parentNode) b.remove(); }, dur);
+  const sp = window.agentSprites[role]; if (sp) sp.showBubble(text, dur);
 }
 
 // ═══ Particles ═══
 function spawnP(role) {
-  const el = document.getElementById(`ch-${role}`);
-  if (!el) return;
-  const icons = ['⚡','✨','💡','⚙️','📌'];
-  for (let i = 0; i < 3; i++) {
-    setTimeout(() => {
-      const p = document.createElement('div');
-      p.className = 'wpart';
-      p.style.setProperty('--px', (Math.random()-.5)*40+'px');
-      p.style.setProperty('--py', -(15+Math.random()*25)+'px');
-      p.style.left = (5+Math.random()*30)+'px';
-      p.style.top = '0px';
-      p.textContent = icons[Math.floor(Math.random()*icons.length)];
-      el.appendChild(p);
-      setTimeout(()=>p.remove(), 1300);
-    }, i*200);
-  }
+  const sp = window.agentSprites[role]; if (sp) sp.spawnParticles();
 }
 
 // ═══ Chat ═══
 function openChat(role) {
   const m = AG[role]; if (!m) return;
-  if (selAgent) { const p = document.getElementById(`ch-${selAgent}`); if(p) p.classList.remove('selected'); }
+  if (selAgent && window.agentSprites[selAgent]) window.agentSprites[selAgent].setSelected(false);
   selAgent = role;
-  const ce = document.getElementById(`ch-${role}`);
-  if (ce) ce.classList.add('selected');
+  if (window.agentSprites[role]) window.agentSprites[role].setSelected(true);
 
   document.getElementById('chAv').style.cssText = `background:${m.color}22;border:2px solid ${m.color}66;font-size:18px;`;
   document.getElementById('chAv').textContent = m.emoji;
@@ -951,7 +1118,8 @@ function openChat(role) {
 
 function closeChat() {
   document.getElementById('chatPanel').classList.remove('open');
-  if (selAgent) { const e = document.getElementById(`ch-${selAgent}`); if(e) e.classList.remove('selected'); selAgent = null; }
+  if (selAgent && window.agentSprites[selAgent]) window.agentSprites[selAgent].setSelected(false);
+  selAgent = null;
 }
 
 function sendChat() {
@@ -1019,18 +1187,13 @@ function startMeeting() {
   document.getElementById('meetTopic').value = '';
   addFeed('working','🤝 Reunião: '+t);
   ['po','ceo','tech-lead'].forEach((r,i) => {
-    const el = document.getElementById(`ch-${r}`);
-    if (!el) return;
-    const sp = LAYOUT.meetingSpots[i];
+    const sp = window.agentSprites[r];
+    if (!sp) return;
+    const spot = LAYOUT.meetingSpots[i];
     setTimeout(() => {
-      el.className = 'char walking';
-      setTimeout(() => {
-        el.className = 'char idle';
-        el.style.left = sp.x+'px';
-        el.style.top = sp.y+'px';
-        showBub(r,'Em reunião',0);
-      }, 400);
-    }, i*250);
+      sp.moveToMeeting(spot.x, spot.y);
+      setTimeout(() => showBub(r,'Em reunião', 0), 900);
+    }, i * 280);
   });
 }
 
@@ -1078,6 +1241,7 @@ function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;'
 // ═══ Init ═══
 document.addEventListener('DOMContentLoaded', () => {
   renderOffice();
+  renderAgentControls();
   fetch('/api/vault/stats').then(r=>r.json()).then(renderVault).catch(()=>{});
 
   document.getElementById('taskIn').addEventListener('keydown', e => {
@@ -1087,9 +1251,178 @@ document.addEventListener('DOMContentLoaded', () => {
     this.style.height='auto'; this.style.height=Math.min(this.scrollHeight,100)+'px';
   });
   document.getElementById('meetTopic').addEventListener('keydown', e => { if(e.key==='Enter') startMeeting(); });
-  document.addEventListener('keydown', e => { if(e.key==='Escape'){closeModal();closeChat();} });
+  document.addEventListener('keydown', e => { if(e.key==='Escape'){closeModal();closeChat();closeVaultGraph();} });
 });
+
+// ═══ Agent Controls ═══
+function renderAgentControls() {
+  const c = document.getElementById('agentControls'); if (!c) return;
+  c.innerHTML = '';
+  for (const [role, meta] of Object.entries(AG)) {
+    const row = document.createElement('div'); row.className = 'ac-row';
+    row.innerHTML = `
+      <span style="font-size:15px;flex-shrink:0">${meta.emoji}</span>
+      <div class="ac-info">
+        <div class="ac-name">${meta.name}</div>
+        <div class="ac-role">${meta.role}</div>
+      </div>
+      <button class="btn btn-sec" style="font-size:9px;padding:2px 5px;flex-shrink:0" onclick="openChat('${role}')" title="Chat">💬</button>
+      <button class="ac-toggle on" id="tog-${role}" onclick="toggleAgent('${role}')" title="Ativar/Desativar"></button>
+    `;
+    c.appendChild(row);
+  }
+}
+
+async function toggleAgent(role) {
+  const btn = document.getElementById(`tog-${role}`);
+  if (!btn) return;
+  const isOn = btn.classList.contains('on');
+  try {
+    await fetch(`/api/agents/${role}/${isOn ? 'deactivate' : 'activate'}`, { method: 'POST' });
+    // UI update handled by socket event
+  } catch(e) { addFeed('error','Erro ao alterar agente'); }
+}
+
+// ═══ Vault Neural Network ═══
+const GRAPH_COLORS = {
+  Backlog:'#60a5fa', Decisoes:'#c084fc', Analises:'#34d399', Sprints:'#f472b6',
+  Design:'#fb923c', Reviews:'#fbbf24', Arquitetura:'#818cf8', Deploy:'#f87171', _sistema:'#94a3b8'
+};
+let vgGraph = null, vgData = null, vgScriptsLoaded = false;
+const vgActive = new Set(Object.keys(GRAPH_COLORS));
+
+function openVaultGraph() { document.getElementById('vaultGraphOverlay').classList.add('open'); initGraph(); }
+function closeVaultGraph() { document.getElementById('vaultGraphOverlay').classList.remove('open'); }
+function closeNotePanel() { document.getElementById('notePanel').classList.remove('open'); }
+
+function initGraph() {
+  if (vgScriptsLoaded) { refreshGraph(); return; }
+  const s1 = document.createElement('script');
+  s1.src = 'https://unpkg.com/force-graph/dist/force-graph.min.js';
+  s1.onload = () => {
+    const s2 = document.createElement('script');
+    s2.src = 'https://cdn.jsdelivr.net/npm/marked/marked.min.js';
+    s2.onload = () => { vgScriptsLoaded = true; refreshGraph(); };
+    document.head.appendChild(s2);
+  };
+  document.head.appendChild(s1);
+}
+
+async function refreshGraph() {
+  try {
+    const res = await fetch('/api/vault/graph');
+    vgData = await res.json();
+    renderGraph();
+    renderGraphFilters();
+  } catch(e) { addFeed('error','Erro ao carregar grafo: '+e.message); }
+}
+
+function _getFiltered() {
+  if (!vgData) return { nodes:[], links:[] };
+  const nodes = vgData.nodes.filter(n => vgActive.has(n.group));
+  const ids = new Set(nodes.map(n => n.id));
+  const links = vgData.links.filter(l => {
+    const s = typeof l.source==='object' ? l.source.id : l.source;
+    const t = typeof l.target==='object' ? l.target.id : l.target;
+    return ids.has(s) && ids.has(t);
+  });
+  return { nodes, links };
+}
+
+function renderGraph() {
+  if (!vgData || !window.ForceGraph) return;
+  const el = document.getElementById('graphCanvas');
+  if (vgGraph) { try { vgGraph._destructor?.(); } catch(e){} el.innerHTML = ''; }
+  const data = _getFiltered();
+
+  vgGraph = ForceGraph()(el)
+    .graphData(data)
+    .nodeId('id')
+    .nodeLabel(n => `${n.label} · ${n.group}${n.agente ? ' · '+n.agente : ''}`)
+    .nodeColor(n => GRAPH_COLORS[n.group] || '#94a3b8')
+    .nodeVal(n => {
+      const linkCount = data.links.filter(l => {
+        const s = typeof l.source==='object'?l.source.id:l.source;
+        const t = typeof l.target==='object'?l.target.id:l.target;
+        return s===n.id || t===n.id;
+      }).length;
+      return 4 + linkCount * 2;
+    })
+    .nodeRelSize(5)
+    .linkColor(() => 'rgba(124,111,247,0.22)')
+    .linkWidth(1)
+    .linkDirectionalArrowLength(4)
+    .linkDirectionalArrowRelPos(1)
+    .backgroundColor('#06030f')
+    .onNodeClick(node => openNotePanel(node))
+    .onBackgroundClick(() => closeNotePanel())
+    .width(el.offsetWidth || 800)
+    .height(el.offsetHeight || 600);
+}
+
+function renderGraphFilters() {
+  const c = document.getElementById('graphFilters'); c.innerHTML = '';
+  const allMeta = { ...VAULT_META, _sistema: { e:'⚙️', l:'Sistema' } };
+  for (const [group, color] of Object.entries(GRAPH_COLORS)) {
+    const m = allMeta[group] || { e:'📁', l:group };
+    const btn = document.createElement('button');
+    btn.className = 'vg-f active';
+    btn.style.cssText = `border-color:${color};color:${color};`;
+    btn.textContent = `${m.e} ${m.l}`;
+    btn.onclick = () => {
+      if (vgActive.has(group)) { vgActive.delete(group); btn.classList.remove('active'); }
+      else { vgActive.add(group); btn.classList.add('active'); }
+      renderGraph();
+    };
+    c.appendChild(btn);
+  }
+}
+
+async function openNotePanel(node) {
+  document.getElementById('npTitle').textContent = node.label;
+  const c = GRAPH_COLORS[node.group] || '#94a3b8';
+  const meta = [];
+  if (node.group) meta.push(`<span class="np-tag" style="color:${c}">${node.group}</span>`);
+  if (node.agente) meta.push(`<span class="np-tag">${AG[node.agente]?.emoji||''} ${node.agente}</span>`);
+  if (node.status) meta.push(`<span class="np-tag">${node.status}</span>`);
+  if (node.tipo) meta.push(`<span class="np-tag">${node.tipo}</span>`);
+  document.getElementById('npMeta').innerHTML = meta.join('');
+  document.getElementById('npBody').innerHTML = '<em style="color:var(--text-muted);font-size:11px">Carregando...</em>';
+  document.getElementById('notePanel').classList.add('open');
+
+  const preview = node.preview || '';
+  try {
+    const res = await fetch(`/api/vault/notes/${node.group}`);
+    const notes = await res.json();
+    const found = notes.find(n => n.filename === node.id + '.md');
+    const content = found ? found.preview : preview;
+    document.getElementById('npBody').innerHTML = window.marked ? marked.parse(content || '_sem conteúdo_') : `<pre>${content}</pre>`;
+  } catch(e) {
+    document.getElementById('npBody').innerHTML = window.marked ? marked.parse(preview || '_sem conteúdo_') : `<pre>${preview}</pre>`;
+  }
+}
 </script>
 
+<!-- Vault Neural Network overlay -->
+<div id="vaultGraphOverlay">
+  <div class="vg-header">
+    <span class="vg-title">🧠 Rede Neural</span>
+    <div class="vg-filters" id="graphFilters"></div>
+    <button class="btn btn-sec" style="font-size:10px;padding:4px 10px;white-space:nowrap" onclick="closeVaultGraph()">✕ Fechar</button>
+  </div>
+  <div class="vg-body">
+    <div id="graphCanvas"></div>
+    <div id="notePanel">
+      <button class="np-close" onclick="closeNotePanel()">✕</button>
+      <div class="np-head">
+        <div class="np-title" id="npTitle">—</div>
+        <div class="np-meta" id="npMeta"></div>
+      </div>
+      <div class="np-body" id="npBody"></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/phaser@3.80.0/dist/phaser.min.js"></script>
 </body>
 </html>

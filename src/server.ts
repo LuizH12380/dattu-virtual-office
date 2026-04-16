@@ -55,6 +55,88 @@ async function main(): Promise<void> {
     res.json(notes);
   });
 
+  app.get('/api/vault/graph', (_req, res) => {
+    const vaultFolders = ['Backlog', 'Decisoes', 'Analises', 'Sprints', 'Design', 'Reviews', 'Arquitetura', 'Deploy', '_sistema'];
+
+    // Coleta todas as notas
+    const allNotes: Array<{ note: ReturnType<typeof obsidian.listNotes>[number]; folder: string }> = [];
+    for (const folder of vaultFolders) {
+      const notes = obsidian.listNotes(folder);
+      for (const note of notes) allNotes.push({ note, folder });
+    }
+
+    // Lookup: nome-do-arquivo-sem-extensão (lowercase) → entrada
+    const noteMap = new Map<string, string>(); // key → nodeId
+    for (const { note } of allNotes) {
+      const key = note.filename.replace('.md', '').toLowerCase();
+      noteMap.set(key, note.filename.replace('.md', ''));
+    }
+
+    // Nós do grafo
+    const nodes = allNotes.map(({ note, folder }) => {
+      const body = note.content.replace(/^---[\s\S]*?---\n/, '');
+      const titleMatch = body.match(/^#\s+(.+)/m);
+      const label = titleMatch ? titleMatch[1].trim() : note.filename.replace('.md', '');
+      return {
+        id: note.filename.replace('.md', ''),
+        label,
+        group: folder,
+        agente: (note.frontmatter.agente as string) ?? null,
+        status: (note.frontmatter.status as string) ?? null,
+        tipo: (note.frontmatter.tipo as string) ?? null,
+        path: note.path,
+        preview: body.slice(0, 300).trim(),
+      };
+    });
+
+    // Arestas via [[wikilinks]]
+    const linksSet = new Set<string>();
+    const links: Array<{ source: string; target: string }> = [];
+    for (const { note } of allNotes) {
+      const sourceId = note.filename.replace('.md', '');
+      for (const rawLink of note.links) {
+        const targetKey = rawLink.toLowerCase().trim();
+        let targetId = noteMap.get(targetKey);
+        if (!targetId) {
+          // fuzzy: procura por substring
+          for (const [key, id] of noteMap.entries()) {
+            if (key.includes(targetKey) || targetKey.includes(key)) {
+              targetId = id;
+              break;
+            }
+          }
+        }
+        if (targetId && targetId !== sourceId) {
+          const edgeKey = [sourceId, targetId].sort().join('↔');
+          if (!linksSet.has(edgeKey)) {
+            linksSet.add(edgeKey);
+            links.push({ source: sourceId, target: targetId });
+          }
+        }
+      }
+    }
+
+    res.json({ nodes, links });
+  });
+
+  app.post('/api/agents/:role/activate', (req, res) => {
+    const role = req.params.role as AgentRole;
+    const agent = orchestrator.getAgent(role);
+    if (!agent) { res.status(404).json({ error: 'Agente não encontrado' }); return; }
+    agent.active = true;
+    io.emit('agent:activated', { role, name: agent.name });
+    res.json({ role, active: true });
+  });
+
+  app.post('/api/agents/:role/deactivate', (req, res) => {
+    const role = req.params.role as AgentRole;
+    const agent = orchestrator.getAgent(role);
+    if (!agent) { res.status(404).json({ error: 'Agente não encontrado' }); return; }
+    agent.active = false;
+    io.emit('agent:deactivated', { role, name: agent.name });
+    res.json({ role, active: false });
+  });
+
   app.post('/api/task', async (req, res) => {
     const { task, priority, context, mode, startFrom, involveAgents } = req.body as {
       task: string;
@@ -124,6 +206,21 @@ async function main(): Promise<void> {
         history.push({ role: 'assistant', content: response });
         chatHistories.set(historyKey, history.slice(-20));
         socket.emit('chat:response', { role: data.role, message: response });
+      } catch (err) {
+        socket.emit('error', { message: err instanceof Error ? err.message : String(err) });
+      }
+    });
+
+    socket.on('meeting:start', async (data: { topic: string; agents?: AgentRole[] }) => {
+      if (!data.topic?.trim()) return;
+      const involveAgents = data.agents ?? (['po', 'ceo', 'tech-lead'] as AgentRole[]);
+      try {
+        await orchestrator.process({
+          task: `Reunião sobre: ${data.topic}`,
+          priority: 'high',
+          mode: 'direct',
+          involveAgents,
+        });
       } catch (err) {
         socket.emit('error', { message: err instanceof Error ? err.message : String(err) });
       }

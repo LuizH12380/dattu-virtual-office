@@ -17,6 +17,7 @@ export abstract class BaseAgent {
   protected readonly config: AgentConfig;
   protected readonly model: string;
   protected readonly companyName: string;
+  public active = true;
 
   constructor(config: AgentConfig, obsidian: ObsidianService) {
     this.client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
