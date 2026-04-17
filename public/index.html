@@ -44,7 +44,7 @@
     .char-sprite {
       width:16px; height:32px; background-repeat:no-repeat;
       image-rendering:pixelated; image-rendering:crisp-edges;
-      transform:scale(2.5); transform-origin:bottom center; margin-bottom:8px;
+      transform:scale(2); transform-origin:bottom center;
       transition: filter .3s;
       filter: drop-shadow(0 2px 3px rgba(0,0,0,.6));
     }
@@ -774,18 +774,18 @@ function switchTab(tab) {
 // ═══ Office Renderer ═══
 let officeRendered = false;
 
-// Character sprite assignments (sprite file + frame offset in sit spritesheet)
-// sit sprites: 384x32 = 24 frames of 16x32, offset = frame * 16
+// Character sprite assignments
+// idle sprites: 64x32 = 4 frames of 16x32 (down=0, up=16, right=32, left=48)
 const CHAR_ASSIGN = {
-  'luiz':         { sprite:'alex',   frame:0  },  // Alex - executivo
-  'ceo':          { sprite:'bob',    frame:0  },  // Bob - formal
-  'po':           { sprite:'adam',   frame:0  },  // Adam - casual
-  'data-analyst': { sprite:'amelia', frame:0  },  // Amelia
-  'dev-backend':  { sprite:'bob',    frame:16 },  // Bob (frame diferente)
-  'dev-frontend': { sprite:'adam',   frame:16 },  // Adam (frame diferente)
-  'ux':           { sprite:'amelia', frame:16 },  // Amelia (frame diferente)
-  'tech-lead':    { sprite:'alex',   frame:16 },  // Alex (frame diferente)
-  'devops':       { sprite:'adam',   frame:32 },  // Adam (frame diferente)
+  'luiz':         { sprite:'alex',   frame:0  },  // Alex - facing down (executivo)
+  'ceo':          { sprite:'bob',    frame:0  },  // Bob - facing down
+  'po':           { sprite:'adam',   frame:0  },  // Adam - facing down
+  'data-analyst': { sprite:'amelia', frame:0  },  // Amelia - facing down
+  'dev-backend':  { sprite:'bob',    frame:32 },  // Bob - facing right
+  'dev-frontend': { sprite:'adam',   frame:48 },  // Adam - facing left
+  'ux':           { sprite:'amelia', frame:32 },  // Amelia - facing right
+  'tech-lead':    { sprite:'alex',   frame:48 },  // Alex - facing left
+  'devops':       { sprite:'adam',   frame:32 },  // Adam - facing right
 };
 
 // Positions as % of the office image (512x544)
@@ -838,7 +838,7 @@ function renderOffice() {
       marker.onclick = (e) => { e.stopPropagation(); openChat(role); };
     }
     marker.innerHTML = `
-      <div class="char-sprite" style="background-image:url('/assets/office/chars/${ch.sprite}_sit.png');background-position:-${ch.frame}px 0;"></div>
+      <div class="char-sprite" style="background-image:url('/assets/office/chars/${ch.sprite}_idle.png');background-position:-${ch.frame}px 0;"></div>
       <span class="nm">${pos.label}</span>
     `;
     wrap.appendChild(marker);
