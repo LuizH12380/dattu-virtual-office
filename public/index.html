@@ -42,21 +42,24 @@
     }
     .agent-marker:hover { transform:translate(-50%,-50%) scale(1.15); }
     .char-sprite {
-      width:16px; height:32px; background-repeat:no-repeat;
+      width:48px; height:96px;
+      background-repeat:no-repeat;
+      background-size:1152px 96px;
       image-rendering:pixelated; image-rendering:crisp-edges;
-      transform:scale(3); transform-origin:center center;
       filter: drop-shadow(0 2px 3px rgba(0,0,0,.6));
       --sx:0px;
       animation: char-breathe 1.8s steps(6) infinite;
     }
     @keyframes char-breathe {
       from { background-position-x: var(--sx); }
-      to { background-position-x: calc(var(--sx) - 96px); }
+      to { background-position-x: calc(var(--sx) - 288px); }
     }
     .agent-marker .nm {
+      position:absolute; top:100%; left:50%; transform:translateX(-50%);
       font-size:8px; font-weight:700; color:#fff; padding:1px 6px;
       background:rgba(15,10,26,.8); border-radius:4px; backdrop-filter:blur(2px);
       text-shadow:0 1px 2px #000; white-space:nowrap; letter-spacing:.3px;
+      margin-top:2px;
     }
     .agent-marker[data-status="working"] .char-sprite {
       filter: drop-shadow(0 0 6px #fbbf24) drop-shadow(0 0 14px #fbbf2450) drop-shadow(0 2px 3px rgba(0,0,0,.6));
@@ -781,20 +784,20 @@ let officeRendered = false;
 
 // Character sprite assignments (using idle_anim = 384x32, 24 frames, 6 per direction)
 // Directions: down=0, up=-96px, right=-192px, left=-288px (CSS background-position start)
-// idle_anim directions: down=0, up=-96px, right=-192px, left=-288px
+// Directions at 3x scale: down=0, up=-288px, right=-576px, left=-864px
 const CHAR_ASSIGN = {
-  // Row 1: face UP (looking at monitors to the north)
-  'po':           { sprite:'adam_anim',   sx:'-96px'  },  // Adam facing up
-  'data-analyst': { sprite:'amelia_anim', sx:'-96px'  },  // Amelia facing up
-  'tech-lead':    { sprite:'alex_anim',   sx:'-96px'  },  // Alex facing up
-  'dev-backend':  { sprite:'bob_anim',    sx:'-96px'  },  // Bob facing up
-  // Row 2: face DOWN (looking at monitors to the south)
-  'dev-frontend': { sprite:'adam_anim',   sx:'0px'    },  // Adam facing down
-  'ux':           { sprite:'amelia_anim', sx:'0px'    },  // Amelia facing down
-  'devops':       { sprite:'bob_anim',    sx:'0px'    },  // Bob facing down
-  // Sala ADM: face DOWN
-  'ceo':          { sprite:'alex_anim',   sx:'0px'    },  // Alex facing down
-  'luiz':         { sprite:'bob_anim',    sx:'-288px' },  // Bob facing left (at desk)
+  // Row 1: face UP (monitors to the north, we see their back)
+  'po':           { sprite:'adam_anim',   sx:'-288px' },
+  'data-analyst': { sprite:'amelia_anim', sx:'-288px' },
+  'tech-lead':    { sprite:'alex_anim',   sx:'-288px' },
+  'dev-backend':  { sprite:'bob_anim',    sx:'-288px' },
+  // Row 2: face DOWN (monitors to the south, we see their face)
+  'dev-frontend': { sprite:'adam_anim',   sx:'0px'    },
+  'ux':           { sprite:'amelia_anim', sx:'0px'    },
+  'devops':       { sprite:'bob_anim',    sx:'0px'    },
+  // Sala ADM
+  'ceo':          { sprite:'alex_anim',   sx:'0px'    },
+  'luiz':         { sprite:'bob_anim',    sx:'-864px' },
 };
 
 // Chair center positions in original image (512x544)
