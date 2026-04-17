@@ -42,26 +42,30 @@
     }
     .agent-marker:hover { transform:translate(-50%,-50%) scale(1.18); filter:brightness(1.25); }
     .agent-marker .av {
-      width:38px; height:38px; border-radius:50%; display:flex; align-items:center; justify-content:center;
-      font-size:17px; border:2.5px solid rgba(255,255,255,.3); transition: all .35s;
-      box-shadow: 0 2px 10px rgba(0,0,0,.6); backdrop-filter:blur(2px); background:rgba(15,10,26,.65);
+      display:flex; align-items:flex-end; justify-content:center;
+      transition: all .35s; filter: drop-shadow(0 2px 4px rgba(0,0,0,.7));
     }
+    .agent-marker .av svg { display:block; }
     .agent-marker .nm {
       font-size:8px; font-weight:700; color:#fff; margin-top:3px; padding:1px 6px;
       background:rgba(15,10,26,.75); border-radius:4px; backdrop-filter:blur(2px);
       text-shadow:0 1px 2px #000; white-space:nowrap; letter-spacing:.3px;
     }
     .agent-marker[data-status="working"] .av {
-      border-color:#fbbf24; background:rgba(251,191,36,.15);
-      box-shadow:0 0 16px #fbbf2460,0 0 4px #fbbf2440; animation: pulse-slow .9s infinite;
+      filter: drop-shadow(0 0 8px #fbbf24) drop-shadow(0 0 16px #fbbf2460) drop-shadow(0 2px 4px rgba(0,0,0,.7));
+      animation: pulse-slow .9s infinite;
     }
     .agent-marker[data-status="done"] .av {
-      border-color:#34d399; background:rgba(52,211,153,.12);
-      box-shadow:0 0 14px #34d39950;
+      filter: drop-shadow(0 0 6px #34d399) drop-shadow(0 0 12px #34d39950) drop-shadow(0 2px 4px rgba(0,0,0,.7));
     }
     .agent-marker[data-status="error"] .av {
-      border-color:#f87171; background:rgba(248,113,113,.15);
-      box-shadow:0 0 14px #f8717150;
+      filter: drop-shadow(0 0 6px #f87171) drop-shadow(0 0 12px #f8717150) drop-shadow(0 2px 4px rgba(0,0,0,.7));
+    }
+    /* Room labels */
+    .room-label {
+      position:absolute; z-index:5; padding:2px 8px; border-radius:6px;
+      font-size:8px; font-weight:700; letter-spacing:.5px; text-transform:uppercase;
+      backdrop-filter:blur(3px); pointer-events:none; transform:translate(-50%,-50%);
     }
   </style>
 </head>
@@ -294,6 +298,55 @@
 <div class="toast toast-top toast-end z-[200]" id="toastContainer"></div>
 
 <script>
+// ═══ Character Sprites (12x18 pixel grid) ═══
+function spriteToSVG(rows, pal, scale) {
+  const h = rows.length, w = Math.max(...rows.map(r => r.length));
+  let rects = '';
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < rows[y].length; x++) {
+      const c = rows[y][x];
+      if (c === '.' || c === ' ') continue;
+      const fill = pal[c];
+      if (fill) rects += `<rect x="${x}" y="${y}" width="1" height="1" fill="${fill}"/>`;
+    }
+  }
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" width="${w*scale}" height="${h*scale}" style="image-rendering:pixelated;image-rendering:crisp-edges;">${rects}</svg>`;
+}
+
+const BASE_ROWS = [
+  '...oooooo...',
+  '..ohhhhho...',
+  '..ohhHhho...',
+  '.ohsssssho..',
+  '.ohse.esho..',
+  '.ohsssssho..',
+  '..ossmssso..',
+  '...ossso....',
+  '..oBBBBBo...',
+  '.oaBBBBBao..',
+  '.oabBBBbao..',
+  '..oBBBBBo...',
+  '...oBBBo....',
+  '..opp.ppo...',
+  '..opp.ppo...',
+  '..opp.ppo...',
+  '..oxx.xxo...',
+  '...oo.oo....',
+];
+
+const CHAR_SPRITES = {
+  'po':           { rows: BASE_ROWS, pal: { o:'#0a1020', h:'#5c3a1a', H:'#7a5030', s:'#fcd5b0', a:'#eec5a0', e:'#1a1a2e', m:'#cc7070', B:'#0369a1', b:'#0ea5e9', p:'#1e3a5f', x:'#1e293b' } },
+  'ceo':          { rows: BASE_ROWS, pal: { o:'#0a0a0a', h:'#2d1f0e', H:'#4a3520', s:'#fad0a0', a:'#eac090', e:'#1a1a2e', m:'#aaaaaa', B:'#1e293b', b:'#475569', p:'#0f172a', x:'#0f172a' } },
+  'data-analyst': { rows: BASE_ROWS, pal: { o:'#0a0a1a', h:'#1a3a5f', H:'#2a4a7f', s:'#f0d0a0', a:'#e0c090', e:'#7c3aed', m:'#70dd70', B:'#6d28d9', b:'#a855f7', p:'#1e1b4b', x:'#1e293b' } },
+  'dev-backend':  { rows: BASE_ROWS, pal: { o:'#050505', h:'#111827', H:'#1f2937', s:'#fcd5b0', a:'#eec5a0', e:'#1a1a2e', m:'#4ade80', B:'#111827', b:'#374151', p:'#030712', x:'#030712' } },
+  'dev-frontend': { rows: BASE_ROWS, pal: { o:'#0a0a1a', h:'#3b1054', H:'#5a1a7a', s:'#ffd0a0', a:'#eec090', e:'#1a1a2e', m:'#f472b6', B:'#7c3aed', b:'#ec4899', p:'#1e1b4b', x:'#4a1d96' } },
+  'ux':           { rows: BASE_ROWS, pal: { o:'#1a0a00', h:'#a05020', H:'#c07040', s:'#fde0b0', a:'#edd0a0', e:'#1a1a2e', m:'#fb923c', B:'#b45309', b:'#f59e0b', p:'#4a3020', x:'#2d1a0a' } },
+  'tech-lead':    { rows: BASE_ROWS, pal: { o:'#0a1a0a', h:'#1a3020', H:'#2a4030', s:'#fcd5b0', a:'#eec5a0', e:'#1a1a2e', m:'#4ade80', B:'#065f46', b:'#059669', p:'#022c22', x:'#1e293b' } },
+  'devops':       { rows: BASE_ROWS, pal: { o:'#1a0500', h:'#4a1a0a', H:'#6a2a1a', s:'#fcd0a0', a:'#eec090', e:'#1a1a2e', m:'#f87171', B:'#991b1b', b:'#ef4444', p:'#450a0a', x:'#1e293b' } },
+  // Luiz — Admin/Founder — terno escuro executivo
+  'luiz':         { rows: BASE_ROWS, pal: { o:'#08081a', h:'#1a1020', H:'#2a1a30', s:'#fcd5b0', a:'#eec5a0', e:'#1a1a2e', m:'#cc8888', B:'#0f0f2e', b:'#1e1e4a', p:'#0a0a20', x:'#0a0a14' } },
+};
+
 // ═══ Agent Config ═══
 const AG = {
   'po':           { name:'PO',       role:'Product Owner',       color:'#0ea5e9', emoji:'📋', label:'PO' },
@@ -769,37 +822,58 @@ function switchTab(tab) {
 let officeRendered = false;
 
 // Agent positions as % of the office image (512x544)
-// Mapped to chair/desk locations in Office_Design_2.gif
-const OFFICE_AGENTS = {
-  // Row 1 — top desks (chairs at ~y=130 in 544px image)
-  'po':           { left:'13%',  top:'24%',  label:'PO' },
-  'ceo':          { left:'30%',  top:'24%',  label:'CEO' },
-  'data-analyst': { left:'60%',  top:'24%',  label:'Analista' },
-  'dev-backend':  { left:'80%',  top:'24%',  label:'Backend' },
-  // Row 2 — bottom desks (chairs at ~y=195 in 544px image)
-  'dev-frontend': { left:'13%',  top:'36%',  label:'Frontend' },
-  'ux':           { left:'30%',  top:'36%',  label:'UX' },
-  'tech-lead':    { left:'60%',  top:'36%',  label:'TechLead' },
-  'devops':       { left:'80%',  top:'36%',  label:'DevOps' },
+const OFFICE_POSITIONS = {
+  // Open Office — Row 1 (top desks)
+  'po':           { left:'13%',  top:'23%',  label:'PO' },
+  'data-analyst': { left:'30%',  top:'23%',  label:'Analista' },
+  'tech-lead':    { left:'60%',  top:'23%',  label:'TechLead' },
+  'dev-backend':  { left:'80%',  top:'23%',  label:'Backend' },
+  // Open Office — Row 2 (bottom desks)
+  'dev-frontend': { left:'13%',  top:'37%',  label:'Frontend' },
+  'ux':           { left:'30%',  top:'37%',  label:'UX' },
+  'devops':       { left:'60%',  top:'37%',  label:'DevOps' },
+  // Sala ADM (bottom-left)
+  'ceo':          { left:'17%',  top:'80%',  label:'CEO' },
+  'luiz':         { left:'30%',  top:'82%',  label:'Luiz' },
 };
+
+// Room labels
+const ROOM_LABELS = [
+  { left:'45%', top:'10%', text:'Open Office', bg:'rgba(168,85,247,.15)', color:'#c084fc', border:'rgba(168,85,247,.25)' },
+  { left:'17%', top:'57%', text:'Sala ADM', bg:'rgba(96,165,250,.15)', color:'#60a5fa', border:'rgba(96,165,250,.25)' },
+  { left:'78%', top:'57%', text:'Sala de Reuniao', bg:'rgba(251,191,36,.15)', color:'#fbbf24', border:'rgba(251,191,36,.25)' },
+];
 
 function renderOffice() {
   if (officeRendered) return;
   const wrap = document.getElementById('officeWrap');
   if (!wrap) return;
 
-  for (const [role, pos] of Object.entries(OFFICE_AGENTS)) {
-    const m = AG[role];
-    if (!m) continue;
+  // Room labels
+  for (const lbl of ROOM_LABELS) {
+    const el = document.createElement('div');
+    el.className = 'room-label';
+    el.style.cssText = `left:${lbl.left};top:${lbl.top};background:${lbl.bg};color:${lbl.color};border:1px solid ${lbl.border};`;
+    el.textContent = lbl.text;
+    wrap.appendChild(el);
+  }
+
+  // Agent + Luiz markers with pixel art sprites
+  for (const [role, pos] of Object.entries(OFFICE_POSITIONS)) {
+    const m = AG[role] || { name:'Luiz', role:'Admin', color:'#a855f7' };
+    const sprite = CHAR_SPRITES[role];
     const marker = document.createElement('div');
     marker.className = 'agent-marker';
     marker.id = `ofc-marker-${role}`;
     marker.dataset.status = 'idle';
     marker.style.left = pos.left;
     marker.style.top = pos.top;
-    marker.onclick = (e) => { e.stopPropagation(); openChat(role); };
+    if (role !== 'luiz') {
+      marker.onclick = (e) => { e.stopPropagation(); openChat(role); };
+    }
+    const svgHtml = sprite ? spriteToSVG(sprite.rows, sprite.pal, 3) : '';
     marker.innerHTML = `
-      <div class="av" style="border-color:${m.color}60">${m.emoji}</div>
+      <div class="av">${svgHtml}</div>
       <span class="nm">${pos.label}</span>
     `;
     wrap.appendChild(marker);
