@@ -785,41 +785,36 @@ let officeRendered = false;
 // Character sprite assignments (using idle_anim = 384x32, 24 frames, 6 per direction)
 // Directions: down=0, up=-96px, right=-192px, left=-288px (CSS background-position start)
 // Directions at 3x scale: down=0, up=-288px, right=-576px, left=-864px
+// Positions and directions provided by user via debug click tool
 const CHAR_ASSIGN = {
-  // Row 1: face UP (monitors to the north, we see their back)
-  'po':           { sprite:'adam_anim',   sx:'-288px' },
-  'data-analyst': { sprite:'amelia_anim', sx:'-288px' },
-  'tech-lead':    { sprite:'alex_anim',   sx:'-288px' },
-  'dev-backend':  { sprite:'bob_anim',    sx:'-288px' },
-  // Row 2: face DOWN (monitors to the south, we see their face)
-  'dev-frontend': { sprite:'adam_anim',   sx:'0px'    },
-  'ux':           { sprite:'amelia_anim', sx:'0px'    },
-  'devops':       { sprite:'bob_anim',    sx:'0px'    },
-  // Sala ADM
-  'ceo':          { sprite:'alex_anim',   sx:'0px'    },
-  'luiz':         { sprite:'bob_anim',    sx:'-864px' },
+  'po':           { sprite:'adam_anim',   sx:'-288px' },  // face UP
+  'data-analyst': { sprite:'amelia_anim', sx:'-288px' },  // face UP
+  'tech-lead':    { sprite:'alex_anim',   sx:'-288px' },  // face UP
+  'dev-backend':  { sprite:'bob_anim',    sx:'-288px' },  // face UP
+  'dev-frontend': { sprite:'adam_anim',   sx:'0px'    },  // face DOWN (user specified)
+  'ux':           { sprite:'amelia_anim', sx:'-288px' },  // face UP (user specified)
+  'devops':       { sprite:'bob_anim',    sx:'0px'    },  // face DOWN (user specified)
+  'ceo':          { sprite:'alex_anim',   sx:'0px'    },  // face DOWN
+  'luiz':         { sprite:'bob_anim',    sx:'-864px' },  // face LEFT (user specified)
 };
 
-// Positions adjusted from visual feedback on rendered page
+// EXACT positions from user click debug tool
 const OFFICE_POSITIONS = {
-  // Row 1: chairs between desk partitions (y≈26%)
-  'po':           { left:'18%',  top:'26%',  label:'PO' },
-  'data-analyst': { left:'38%',  top:'26%',  label:'Analista' },
-  'tech-lead':    { left:'67%',  top:'26%',  label:'TechLead' },
-  'dev-backend':  { left:'83%',  top:'26%',  label:'Backend' },
-  // Row 2: chairs above second desk row (y≈38%)
-  'dev-frontend': { left:'18%',  top:'38%',  label:'Frontend' },
-  'ux':           { left:'38%',  top:'38%',  label:'UX' },
-  'devops':       { left:'67%',  top:'38%',  label:'DevOps' },
-  // Sala ADM: bottom rooms start at x≈35% (left of that is outside building)
-  'ceo':          { left:'41%',  top:'72%',  label:'CEO' },
-  'luiz':         { left:'50%',  top:'74%',  label:'Luiz' },
+  'po':           { left:'27.9%', top:'31.2%', label:'PO' },
+  'data-analyst': { left:'46.7%', top:'31.2%', label:'Analista' },
+  'tech-lead':    { left:'64.8%', top:'30.8%', label:'TechLead' },
+  'dev-backend':  { left:'21.6%', top:'55.2%', label:'Backend' },
+  'dev-frontend': { left:'21.7%', top:'36.8%', label:'Frontend' },
+  'ux':           { left:'40.4%', top:'55.1%', label:'UX' },
+  'devops':       { left:'59.2%', top:'36.6%', label:'DevOps' },
+  'ceo':          { left:'47.1%', top:'71.2%', label:'CEO' },
+  'luiz':         { left:'83.9%', top:'83.0%', label:'Luiz' },
 };
 
 const ROOM_LABELS = [
   { left:'45%', top:'11%',  text:'Open Office',       bg:'rgba(168,85,247,.12)', color:'#c084fc', border:'rgba(168,85,247,.2)' },
-  { left:'30%', top:'55%',  text:'Sala ADM',           bg:'rgba(96,165,250,.12)',  color:'#60a5fa', border:'rgba(96,165,250,.2)' },
-  { left:'82%', top:'72%',  text:'Sala de Reuniao',     bg:'rgba(251,191,36,.12)',  color:'#fbbf24', border:'rgba(251,191,36,.2)' },
+  { left:'30%', top:'58%',  text:'Sala ADM',           bg:'rgba(96,165,250,.12)',  color:'#60a5fa', border:'rgba(96,165,250,.2)' },
+  { left:'78%', top:'62%',  text:'Sala de Reuniao',     bg:'rgba(251,191,36,.12)',  color:'#fbbf24', border:'rgba(251,191,36,.2)' },
 ];
 
 function renderOffice() {
