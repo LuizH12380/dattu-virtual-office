@@ -34,23 +34,35 @@
     .anim-feed { animation: fadeIn .2s ease-out; }
     .scrollbar-thin::-webkit-scrollbar { width: 4px; }
     .scrollbar-thin::-webkit-scrollbar-thumb { background: #261a33; border-radius: 2px; }
-    /* Office Canvas */
-    #officeWrap { position:relative; display:inline-block; image-rendering:pixelated; }
-    #officeCanvas { display:block; image-rendering:pixelated; image-rendering:crisp-edges; }
+    /* Office */
+    .office-img { width:100%; display:block; image-rendering:pixelated; image-rendering:crisp-edges; }
     .agent-marker {
       position:absolute; display:flex; flex-direction:column; align-items:center; cursor:pointer;
-      transition: transform .2s, filter .2s; z-index:10;
+      transition: transform .25s ease, filter .25s; z-index:10; transform:translate(-50%,-50%);
     }
-    .agent-marker:hover { transform:scale(1.12); filter:brightness(1.2); }
+    .agent-marker:hover { transform:translate(-50%,-50%) scale(1.18); filter:brightness(1.25); }
     .agent-marker .av {
-      width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center;
-      font-size:16px; border:2.5px solid rgba(255,255,255,.25); transition: all .3s;
-      box-shadow: 0 2px 8px rgba(0,0,0,.5);
+      width:38px; height:38px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+      font-size:17px; border:2.5px solid rgba(255,255,255,.3); transition: all .35s;
+      box-shadow: 0 2px 10px rgba(0,0,0,.6); backdrop-filter:blur(2px); background:rgba(15,10,26,.65);
     }
-    .agent-marker .nm { font-size:9px; font-weight:600; color:#fff; text-shadow:0 1px 3px #000,0 0 6px #000; margin-top:2px; }
-    .agent-marker[data-status="working"] .av { border-color:#fbbf24; box-shadow:0 0 12px #fbbf2480,0 2px 8px rgba(0,0,0,.5); animation: pulse-slow 1s infinite; }
-    .agent-marker[data-status="done"] .av { border-color:#34d399; box-shadow:0 0 10px #34d39960; }
-    .agent-marker[data-status="error"] .av { border-color:#f87171; box-shadow:0 0 10px #f8717160; }
+    .agent-marker .nm {
+      font-size:8px; font-weight:700; color:#fff; margin-top:3px; padding:1px 6px;
+      background:rgba(15,10,26,.75); border-radius:4px; backdrop-filter:blur(2px);
+      text-shadow:0 1px 2px #000; white-space:nowrap; letter-spacing:.3px;
+    }
+    .agent-marker[data-status="working"] .av {
+      border-color:#fbbf24; background:rgba(251,191,36,.15);
+      box-shadow:0 0 16px #fbbf2460,0 0 4px #fbbf2440; animation: pulse-slow .9s infinite;
+    }
+    .agent-marker[data-status="done"] .av {
+      border-color:#34d399; background:rgba(52,211,153,.12);
+      box-shadow:0 0 14px #34d39950;
+    }
+    .agent-marker[data-status="error"] .av {
+      border-color:#f87171; background:rgba(248,113,113,.15);
+      box-shadow:0 0 14px #f8717150;
+    }
   </style>
 </head>
 <body class="bg-base-100 text-base-content h-screen flex flex-col overflow-hidden">
@@ -191,19 +203,19 @@
         </div>
 
         <!-- TAB 2: Escritorio Virtual -->
-        <div class="flex-1 overflow-auto hidden flex-col items-center justify-center p-4 bg-[#0a0612]" id="tabOffice">
-          <div class="flex items-center gap-4 mb-3 self-start px-2">
-            <h2 class="text-sm font-semibold opacity-60">Escritorio Virtual — Dattu</h2>
+        <div class="flex-1 overflow-auto hidden flex-col items-center p-4 bg-[#0a0612]" id="tabOffice">
+          <div class="flex items-center justify-between w-full max-w-4xl mb-3 px-1">
+            <h2 class="text-sm font-semibold opacity-60">Escritorio Virtual — Dattu Core Team</h2>
             <div class="flex items-center gap-3 text-[10px] opacity-40">
-              <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-gray-500"></span>Idle</span>
+              <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-base-content/25"></span>Idle</span>
               <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-warning animate-pulse"></span>Working</span>
               <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-success"></span>Done</span>
               <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-error"></span>Error</span>
             </div>
           </div>
-          <div id="officeWrap" class="rounded-xl overflow-hidden border-2 border-base-300 shadow-2xl">
-            <canvas id="officeCanvas" width="832" height="576"></canvas>
-            <!-- Agent markers positioned over the canvas -->
+          <div id="officeWrap" class="relative w-full max-w-4xl rounded-xl overflow-hidden border-2 border-base-300 shadow-2xl">
+            <img src="/assets/office/design_ref.gif" class="office-img" alt="Dattu Office" />
+            <!-- Agent markers are positioned by JS using percentages -->
           </div>
         </div>
       </main>
@@ -746,168 +758,35 @@ function switchTab(tab) {
   if (tab === 'office') {
     dash.classList.add('hidden'); ofc.classList.remove('hidden'); ofc.classList.add('flex');
     btnD.classList.remove('tab-active'); btnO.classList.add('tab-active');
-    if (!officeRendered) renderOfficeCanvas();
+    if (!officeRendered) renderOffice();
   } else {
     ofc.classList.add('hidden'); ofc.classList.remove('flex'); dash.classList.remove('hidden');
     btnO.classList.remove('tab-active'); btnD.classList.add('tab-active');
   }
 }
 
-// ═══ Office Canvas Renderer ═══
+// ═══ Office Renderer ═══
 let officeRendered = false;
-const T = 32; // tile size
-// tileset: 16 cols x 53 rows (512x1696) — furniture
-// room:    16 cols x 14 rows (512x448)  — floors/walls
 
-// Agent desk positions (pixel coords on canvas for marker placement)
+// Agent positions as % of the office image (512x544)
+// Mapped to chair/desk locations in Office_Design_2.gif
 const OFFICE_AGENTS = {
-  'po':           { dx:64,  dy:128, label:'PO' },
-  'ceo':          { dx:224, dy:128, label:'CEO' },
-  'data-analyst': { dx:480, dy:128, label:'Analista' },
-  'dev-backend':  { dx:640, dy:128, label:'Backend' },
-  'dev-frontend': { dx:64,  dy:352, label:'Frontend' },
-  'ux':           { dx:224, dy:352, label:'UX' },
-  'tech-lead':    { dx:480, dy:352, label:'TechLead' },
-  'devops':       { dx:640, dy:352, label:'DevOps' },
+  // Row 1 — top desks (chairs at ~y=130 in 544px image)
+  'po':           { left:'13%',  top:'24%',  label:'PO' },
+  'ceo':          { left:'30%',  top:'24%',  label:'CEO' },
+  'data-analyst': { left:'60%',  top:'24%',  label:'Analista' },
+  'dev-backend':  { left:'80%',  top:'24%',  label:'Backend' },
+  // Row 2 — bottom desks (chairs at ~y=195 in 544px image)
+  'dev-frontend': { left:'13%',  top:'36%',  label:'Frontend' },
+  'ux':           { left:'30%',  top:'36%',  label:'UX' },
+  'tech-lead':    { left:'60%',  top:'36%',  label:'TechLead' },
+  'devops':       { left:'80%',  top:'36%',  label:'DevOps' },
 };
 
-function renderOfficeCanvas() {
-  const canvas = document.getElementById('officeCanvas');
-  const ctx = canvas.getContext('2d');
-  const W = canvas.width, H = canvas.height; // 832x576 = 26x18 tiles
-
-  const tilesetImg = new Image();
-  const roomImg = new Image();
-  let loaded = 0;
-
-  function onLoad() {
-    loaded++;
-    if (loaded < 2) return;
-    drawOffice(ctx, tilesetImg, roomImg, W, H);
-    placeAgentMarkers();
-    officeRendered = true;
-  }
-  tilesetImg.onload = onLoad;
-  roomImg.onload = onLoad;
-  tilesetImg.src = '/assets/office/tileset.png';
-  roomImg.src = '/assets/office/room.png';
-}
-
-function dt(ctx, img, sc, sr, dx, dy) {
-  // Draw one 32x32 tile from spritesheet to canvas
-  ctx.drawImage(img, sc*T, sr*T, T, T, dx*T, dy*T, T, T);
-}
-
-function drawOffice(ctx, ts, rm, W, H) {
-  const cols = Math.ceil(W/T), rows = Math.ceil(H/T);
-
-  // ── 1. Floor fill (room tileset: light stone floor at col 0-1, row 4-5) ──
-  for (let y = 0; y < rows; y++) {
-    for (let x = 0; x < cols; x++) {
-      const fc = (x % 2 === 0) ? 0 : 1;
-      const fr = (y % 2 === 0) ? 4 : 5;
-      dt(ctx, rm, fc, fr, x, y);
-    }
-  }
-
-  // ── 2. Meeting room carpet (room: dark carpet at col 4-5, row 8-9) ──
-  for (let y = 6; y <= 11; y++) {
-    for (let x = 9; x <= 16; x++) {
-      const fc = 4 + (x % 2);
-      const fr = 8 + (y % 2);
-      dt(ctx, rm, fc, fr, x, y);
-    }
-  }
-
-  // ── 3. Walls — top & bottom (room: wall pieces rows 4-5, col 6-7 = gray) ──
-  for (let x = 0; x < cols; x++) {
-    dt(ctx, rm, 6 + (x%2), 4, x, 0); // top wall
-    dt(ctx, rm, 6 + (x%2), 5, x, 1); // top wall lower
-    dt(ctx, rm, 6 + (x%2), 4, x, rows-1); // bottom wall
-  }
-  // Side walls
-  for (let y = 0; y < rows; y++) {
-    dt(ctx, rm, 6, 4+(y%2), 0, y);
-    dt(ctx, rm, 7, 4+(y%2), cols-1, y);
-  }
-
-  // ── 4. Desk workstations from tileset ──
-  // Tileset row ~7-8: long beige desk tops (cols 0-3)
-  // Tileset row ~11: chairs (cols 0-3 dark blue), plants (col 6-7)
-  // Tileset row ~11-12 cols 8-10: monitors
-
-  // Helper to draw a workstation at grid position (gx, gy)
-  function drawWorkstation(gx, gy) {
-    // Desk top (2 tiles wide from tileset rows 7-8, cols 0-3)
-    dt(ctx, ts, 0, 7, gx, gy);
-    dt(ctx, ts, 1, 7, gx+1, gy);
-    // Desk body
-    dt(ctx, ts, 0, 8, gx, gy+1);
-    dt(ctx, ts, 1, 8, gx+1, gy+1);
-    // Monitor on desk (tileset row 11, cols 8-9)
-    dt(ctx, ts, 8, 11, gx, gy);
-    // Chair below (tileset row 11, cols 0-1)
-    dt(ctx, ts, 0, 11, gx, gy+2);
-    dt(ctx, ts, 1, 11, gx+1, gy+2);
-  }
-
-  // Top row workstations (y starts at grid row 2)
-  drawWorkstation(1, 2);   // PO
-  drawWorkstation(5, 2);   // CEO
-  drawWorkstation(13, 2);  // Data Analyst
-  drawWorkstation(18, 2);  // Dev Backend
-
-  // Bottom row workstations (y starts at grid row 9)
-  drawWorkstation(1, 9);   // Dev Frontend
-  drawWorkstation(5, 9);   // UX
-  drawWorkstation(13, 9);  // Tech Lead
-  drawWorkstation(18, 9);  // DevOps
-
-  // ── 5. Meeting room furniture ──
-  // Conference table (tileset rows ~21-22, large desk/table pieces)
-  for (let x = 10; x <= 14; x++) {
-    dt(ctx, ts, (x-10) % 4, 9, x, 7);
-    dt(ctx, ts, (x-10) % 4, 10, x, 8);
-    dt(ctx, ts, (x-10) % 4, 9, x, 9);
-    dt(ctx, ts, (x-10) % 4, 10, x, 10);
-  }
-
-  // Meeting room label
-  ctx.fillStyle = 'rgba(168,85,247,0.7)';
-  ctx.font = '10px system-ui';
-  ctx.textAlign = 'center';
-  ctx.fillText('Sala de Reuniao', 12.5*T, 6.5*T);
-
-  // ── 6. Decorations ──
-  // Plants (tileset row 11, col 6)
-  dt(ctx, ts, 6, 11, 0, 2);
-  dt(ctx, ts, 6, 11, cols-1, 2);
-  dt(ctx, ts, 6, 11, 0, rows-3);
-  dt(ctx, ts, 6, 11, cols-1, rows-3);
-  dt(ctx, ts, 6, 11, 9, 6);
-  dt(ctx, ts, 6, 11, 16, 6);
-
-  // Wall art (tileset row 15, cols 0-4)
-  dt(ctx, ts, 0, 15, 3, 1);
-  dt(ctx, ts, 1, 15, 4, 1);
-  dt(ctx, ts, 2, 15, 15, 1);
-  dt(ctx, ts, 3, 15, 16, 1);
-  dt(ctx, ts, 4, 15, 21, 1);
-
-  // Whiteboard in meeting room (tileset row 16, cols 5-7)
-  dt(ctx, ts, 5, 16, 11, 5);
-  dt(ctx, ts, 6, 16, 12, 5);
-  dt(ctx, ts, 7, 16, 13, 5);
-
-  // Printer (tileset row 26-27, col 5-6)
-  dt(ctx, ts, 5, 26, 8, 15);
-  dt(ctx, ts, 5, 26, 22, 15);
-}
-
-function placeAgentMarkers() {
+function renderOffice() {
+  if (officeRendered) return;
   const wrap = document.getElementById('officeWrap');
-  // Remove old markers
-  wrap.querySelectorAll('.agent-marker').forEach(m => m.remove());
+  if (!wrap) return;
 
   for (const [role, pos] of Object.entries(OFFICE_AGENTS)) {
     const m = AG[role];
@@ -916,15 +795,16 @@ function placeAgentMarkers() {
     marker.className = 'agent-marker';
     marker.id = `ofc-marker-${role}`;
     marker.dataset.status = 'idle';
-    marker.style.left = (pos.dx - 18) + 'px';
-    marker.style.top = (pos.dy - 50) + 'px';
+    marker.style.left = pos.left;
+    marker.style.top = pos.top;
     marker.onclick = (e) => { e.stopPropagation(); openChat(role); };
     marker.innerHTML = `
-      <div class="av" style="background:${m.color}30">${m.emoji}</div>
+      <div class="av" style="border-color:${m.color}60">${m.emoji}</div>
       <span class="nm">${pos.label}</span>
     `;
     wrap.appendChild(marker);
   }
+  officeRendered = true;
 }
 
 // ═══ Office Status Sync ═══
