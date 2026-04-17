@@ -797,27 +797,28 @@ const CHAR_ASSIGN = {
   'luiz':         { sprite:'bob_anim',    sx:'-288px' },  // Bob facing left (at desk)
 };
 
-// Positions = CENTER of each chair in the image (512x544)
-// transform translate(-50%,-50%) means position = center of sprite
+// Chair center positions in original image (512x544)
+// Row 1 chairs: y=130px → 23.9% | Row 2 chairs: y=196px → 36.0%
+// x positions: 78→15.2%, 196→38.3%, 346→67.6%, 444→86.7%
 const OFFICE_POSITIONS = {
-  // Row 1: chair centers at y≈136 → 25.0%. Desks north, face UP
-  'po':           { left:'15.6%', top:'25.0%', label:'PO' },
-  'data-analyst': { left:'37.9%', top:'25.0%', label:'Analista' },
-  'tech-lead':    { left:'67.2%', top:'25.0%', label:'TechLead' },
-  'dev-backend':  { left:'85.9%', top:'25.0%', label:'Backend' },
-  // Row 2: chair centers at y≈202 → 37.1%. Desks south, face DOWN
-  'dev-frontend': { left:'15.6%', top:'37.1%', label:'Frontend' },
-  'ux':           { left:'37.9%', top:'37.1%', label:'UX' },
-  'devops':       { left:'67.2%', top:'37.1%', label:'DevOps' },
-  // Sala ADM (bottom-left room, desks at ~y=410)
-  'ceo':          { left:'16.6%', top:'75.4%', label:'CEO' },
-  'luiz':         { left:'43%',   top:'73.5%', label:'Luiz' },
+  // Row 1: desks face north, chars face UP (sx=-96px)
+  'po':           { left:'15.2%', top:'23.9%', label:'PO' },
+  'data-analyst': { left:'38.3%', top:'23.9%', label:'Analista' },
+  'tech-lead':    { left:'67.6%', top:'23.9%', label:'TechLead' },
+  'dev-backend':  { left:'86.7%', top:'23.9%', label:'Backend' },
+  // Row 2: desks face south, chars face DOWN (sx=0px)
+  'dev-frontend': { left:'15.2%', top:'36.0%', label:'Frontend' },
+  'ux':           { left:'38.3%', top:'36.0%', label:'UX' },
+  'devops':       { left:'67.6%', top:'36.0%', label:'DevOps' },
+  // Sala ADM: CEO at desk in bottom-left room, Luiz at desk in bottom-center
+  'ceo':          { left:'15.6%', top:'71.7%', label:'CEO' },
+  'luiz':         { left:'45.9%', top:'70.8%', label:'Luiz' },
 };
 
 const ROOM_LABELS = [
   { left:'45%', top:'11%',  text:'Open Office',       bg:'rgba(168,85,247,.12)', color:'#c084fc', border:'rgba(168,85,247,.2)' },
   { left:'12%', top:'55%',  text:'Sala ADM',           bg:'rgba(96,165,250,.12)',  color:'#60a5fa', border:'rgba(96,165,250,.2)' },
-  { left:'78%', top:'78%',  text:'Sala de Reuniao',     bg:'rgba(251,191,36,.12)',  color:'#fbbf24', border:'rgba(251,191,36,.2)' },
+  { left:'86%', top:'77%',  text:'Sala de Reuniao',     bg:'rgba(251,191,36,.12)',  color:'#fbbf24', border:'rgba(251,191,36,.2)' },
 ];
 
 function renderOffice() {
