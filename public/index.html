@@ -781,33 +781,37 @@ let officeRendered = false;
 
 // Character sprite assignments (using idle_anim = 384x32, 24 frames, 6 per direction)
 // Directions: down=0, up=-96px, right=-192px, left=-288px (CSS background-position start)
+// idle_anim directions: down=0, up=-96px, right=-192px, left=-288px
 const CHAR_ASSIGN = {
-  'luiz':         { sprite:'alex_anim',   sx:'0px'    },  // Alex facing down
-  'ceo':          { sprite:'bob_anim',    sx:'0px'    },  // Bob facing down
-  'po':           { sprite:'adam_anim',   sx:'0px'    },  // Adam facing down
-  'data-analyst': { sprite:'amelia_anim', sx:'0px'    },  // Amelia facing down
-  'dev-backend':  { sprite:'bob_anim',    sx:'-192px' },  // Bob facing right
-  'dev-frontend': { sprite:'adam_anim',   sx:'-288px' },  // Adam facing left
-  'ux':           { sprite:'amelia_anim', sx:'-192px' },  // Amelia facing right
-  'tech-lead':    { sprite:'alex_anim',   sx:'-288px' },  // Alex facing left
-  'devops':       { sprite:'adam_anim',   sx:'-192px' },  // Adam facing right
+  // Row 1: face UP (looking at monitors to the north)
+  'po':           { sprite:'adam_anim',   sx:'-96px'  },  // Adam facing up
+  'data-analyst': { sprite:'amelia_anim', sx:'-96px'  },  // Amelia facing up
+  'tech-lead':    { sprite:'alex_anim',   sx:'-96px'  },  // Alex facing up
+  'dev-backend':  { sprite:'bob_anim',    sx:'-96px'  },  // Bob facing up
+  // Row 2: face DOWN (looking at monitors to the south)
+  'dev-frontend': { sprite:'adam_anim',   sx:'0px'    },  // Adam facing down
+  'ux':           { sprite:'amelia_anim', sx:'0px'    },  // Amelia facing down
+  'devops':       { sprite:'bob_anim',    sx:'0px'    },  // Bob facing down
+  // Sala ADM: face DOWN
+  'ceo':          { sprite:'alex_anim',   sx:'0px'    },  // Alex facing down
+  'luiz':         { sprite:'bob_anim',    sx:'-288px' },  // Bob facing left (at desk)
 };
 
 // Positions as % of the office image (512x544)
-// Measured from chair pixel positions in design_ref.gif (512x544)
+// Pixel-precise chair centers measured from design_ref.gif
 const OFFICE_POSITIONS = {
-  // Open Office — Row 1 chairs (y≈148px = 27.2%)
-  'po':           { left:'15.5%', top:'28%',  label:'PO' },          // x≈80
-  'data-analyst': { left:'38%',   top:'28%',  label:'Analista' },    // x≈195
-  'tech-lead':    { left:'68%',   top:'28%',  label:'TechLead' },    // x≈348
-  'dev-backend':  { left:'86%',   top:'28%',  label:'Backend' },     // x≈440
-  // Open Office — Row 2 chairs (y≈246px = 45.2%)
-  'dev-frontend': { left:'15.5%', top:'46%',  label:'Frontend' },    // x≈80
-  'ux':           { left:'38%',   top:'46%',  label:'UX' },          // x≈195
-  'devops':       { left:'68%',   top:'46%',  label:'DevOps' },      // x≈348
+  // Row 1: chairs at y≈148 (27.2%), desks face north
+  'po':           { left:'15.2%', top:'27.2%', label:'PO' },
+  'data-analyst': { left:'37.9%', top:'27.2%', label:'Analista' },
+  'tech-lead':    { left:'68.4%', top:'27.2%', label:'TechLead' },
+  'dev-backend':  { left:'87.1%', top:'27.2%', label:'Backend' },
+  // Row 2: chairs at y≈228 (41.9%), desks face south
+  'dev-frontend': { left:'15.2%', top:'41.9%', label:'Frontend' },
+  'ux':           { left:'37.9%', top:'41.9%', label:'UX' },
+  'devops':       { left:'68.4%', top:'41.9%', label:'DevOps' },
   // Sala ADM (bottom-left room)
-  'ceo':          { left:'22%',   top:'80%',  label:'CEO' },         // x≈113, y≈435
-  'luiz':         { left:'42%',   top:'78%',  label:'Luiz' },        // x≈215, y≈425
+  'ceo':          { left:'16.6%', top:'76%',   label:'CEO' },
+  'luiz':         { left:'42%',   top:'75%',   label:'Luiz' },
 };
 
 const ROOM_LABELS = [
