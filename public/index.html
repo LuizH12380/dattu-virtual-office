@@ -44,9 +44,14 @@
     .char-sprite {
       width:16px; height:32px; background-repeat:no-repeat;
       image-rendering:pixelated; image-rendering:crisp-edges;
-      transform:scale(2); transform-origin:bottom center;
-      transition: filter .3s;
+      transform:scale(3); transform-origin:bottom center;
       filter: drop-shadow(0 2px 3px rgba(0,0,0,.6));
+      --sx:0px;
+      animation: char-breathe 1.8s steps(6) infinite;
+    }
+    @keyframes char-breathe {
+      from { background-position-x: var(--sx); }
+      to { background-position-x: calc(var(--sx) - 96px); }
     }
     .agent-marker .nm {
       font-size:8px; font-weight:700; color:#fff; padding:1px 6px;
@@ -774,40 +779,40 @@ function switchTab(tab) {
 // ═══ Office Renderer ═══
 let officeRendered = false;
 
-// Character sprite assignments
-// idle sprites: 64x32 = 4 frames of 16x32 (down=0, up=16, right=32, left=48)
+// Character sprite assignments (using idle_anim = 384x32, 24 frames, 6 per direction)
+// Directions: down=0, up=-96px, right=-192px, left=-288px (CSS background-position start)
 const CHAR_ASSIGN = {
-  'luiz':         { sprite:'alex',   frame:0  },  // Alex - facing down (executivo)
-  'ceo':          { sprite:'bob',    frame:0  },  // Bob - facing down
-  'po':           { sprite:'adam',   frame:0  },  // Adam - facing down
-  'data-analyst': { sprite:'amelia', frame:0  },  // Amelia - facing down
-  'dev-backend':  { sprite:'bob',    frame:32 },  // Bob - facing right
-  'dev-frontend': { sprite:'adam',   frame:48 },  // Adam - facing left
-  'ux':           { sprite:'amelia', frame:32 },  // Amelia - facing right
-  'tech-lead':    { sprite:'alex',   frame:48 },  // Alex - facing left
-  'devops':       { sprite:'adam',   frame:32 },  // Adam - facing right
+  'luiz':         { sprite:'alex_anim',   sx:'0px'    },  // Alex facing down
+  'ceo':          { sprite:'bob_anim',    sx:'0px'    },  // Bob facing down
+  'po':           { sprite:'adam_anim',   sx:'0px'    },  // Adam facing down
+  'data-analyst': { sprite:'amelia_anim', sx:'0px'    },  // Amelia facing down
+  'dev-backend':  { sprite:'bob_anim',    sx:'-192px' },  // Bob facing right
+  'dev-frontend': { sprite:'adam_anim',   sx:'-288px' },  // Adam facing left
+  'ux':           { sprite:'amelia_anim', sx:'-192px' },  // Amelia facing right
+  'tech-lead':    { sprite:'alex_anim',   sx:'-288px' },  // Alex facing left
+  'devops':       { sprite:'adam_anim',   sx:'-192px' },  // Adam facing right
 };
 
 // Positions as % of the office image (512x544)
 const OFFICE_POSITIONS = {
-  // Open Office — Row 1 (top desks, agents sit facing south)
-  'po':           { left:'14%',  top:'26%',  label:'PO' },
-  'data-analyst': { left:'31%',  top:'26%',  label:'Analista' },
-  'tech-lead':    { left:'61%',  top:'26%',  label:'TechLead' },
-  'dev-backend':  { left:'82%',  top:'26%',  label:'Backend' },
+  // Open Office — Row 1 (top desks)
+  'po':           { left:'14%',  top:'27%',  label:'PO' },
+  'data-analyst': { left:'31%',  top:'27%',  label:'Analista' },
+  'tech-lead':    { left:'61%',  top:'27%',  label:'TechLead' },
+  'dev-backend':  { left:'82%',  top:'27%',  label:'Backend' },
   // Open Office — Row 2 (bottom desks)
-  'dev-frontend': { left:'14%',  top:'40%',  label:'Frontend' },
-  'ux':           { left:'31%',  top:'40%',  label:'UX' },
-  'devops':       { left:'61%',  top:'40%',  label:'DevOps' },
-  // Sala ADM (bottom-left)
-  'ceo':          { left:'17%',  top:'82%',  label:'CEO' },
-  'luiz':         { left:'33%',  top:'80%',  label:'Luiz' },
+  'dev-frontend': { left:'14%',  top:'43%',  label:'Frontend' },
+  'ux':           { left:'31%',  top:'43%',  label:'UX' },
+  'devops':       { left:'61%',  top:'43%',  label:'DevOps' },
+  // Sala ADM (bottom-left room, at the desks)
+  'luiz':         { left:'35%',  top:'78%',  label:'Luiz' },
+  'ceo':          { left:'18%',  top:'83%',  label:'CEO' },
 };
 
 const ROOM_LABELS = [
   { left:'45%', top:'10%',  text:'Open Office',      bg:'rgba(168,85,247,.12)', color:'#c084fc', border:'rgba(168,85,247,.2)' },
-  { left:'14%', top:'57%',  text:'Sala ADM',          bg:'rgba(96,165,250,.12)',  color:'#60a5fa', border:'rgba(96,165,250,.2)' },
-  { left:'78%', top:'57%',  text:'Sala de Reuniao',    bg:'rgba(251,191,36,.12)',  color:'#fbbf24', border:'rgba(251,191,36,.2)' },
+  { left:'14%', top:'56%',  text:'Sala ADM',          bg:'rgba(96,165,250,.12)',  color:'#60a5fa', border:'rgba(96,165,250,.2)' },
+  { left:'62%', top:'72%',  text:'Sala de Reuniao',    bg:'rgba(251,191,36,.12)',  color:'#fbbf24', border:'rgba(251,191,36,.2)' },
 ];
 
 function renderOffice() {
@@ -838,7 +843,7 @@ function renderOffice() {
       marker.onclick = (e) => { e.stopPropagation(); openChat(role); };
     }
     marker.innerHTML = `
-      <div class="char-sprite" style="background-image:url('/assets/office/chars/${ch.sprite}_idle.png');background-position:-${ch.frame}px 0;"></div>
+      <div class="char-sprite" style="background-image:url('/assets/office/chars/${ch.sprite}.png');--sx:${ch.sx};"></div>
       <span class="nm">${pos.label}</span>
     `;
     wrap.appendChild(marker);
