@@ -38,13 +38,13 @@
     .office-img { width:100%; display:block; image-rendering:pixelated; image-rendering:crisp-edges; }
     .agent-marker {
       position:absolute; display:flex; flex-direction:column; align-items:center; cursor:pointer;
-      transition: transform .25s ease, filter .25s; z-index:10; transform:translate(-50%,-100%);
+      transition: transform .25s ease, filter .25s; z-index:10; transform:translate(-50%,-50%);
     }
-    .agent-marker:hover { transform:translate(-50%,-100%) scale(1.15); }
+    .agent-marker:hover { transform:translate(-50%,-50%) scale(1.15); }
     .char-sprite {
       width:16px; height:32px; background-repeat:no-repeat;
       image-rendering:pixelated; image-rendering:crisp-edges;
-      transform:scale(3); transform-origin:bottom center;
+      transform:scale(3); transform-origin:center center;
       filter: drop-shadow(0 2px 3px rgba(0,0,0,.6));
       --sx:0px;
       animation: char-breathe 1.8s steps(6) infinite;
@@ -797,27 +797,27 @@ const CHAR_ASSIGN = {
   'luiz':         { sprite:'bob_anim',    sx:'-288px' },  // Bob facing left (at desk)
 };
 
-// Positions as % of the office image (512x544)
-// Pixel-precise chair centers measured from design_ref.gif
+// Positions = CENTER of each chair in the image (512x544)
+// transform translate(-50%,-50%) means position = center of sprite
 const OFFICE_POSITIONS = {
-  // Row 1: chairs at y≈148 (27.2%), desks face north
-  'po':           { left:'15.2%', top:'27.2%', label:'PO' },
-  'data-analyst': { left:'37.9%', top:'27.2%', label:'Analista' },
-  'tech-lead':    { left:'68.4%', top:'27.2%', label:'TechLead' },
-  'dev-backend':  { left:'87.1%', top:'27.2%', label:'Backend' },
-  // Row 2: chairs at y≈228 (41.9%), desks face south
-  'dev-frontend': { left:'15.2%', top:'41.9%', label:'Frontend' },
-  'ux':           { left:'37.9%', top:'41.9%', label:'UX' },
-  'devops':       { left:'68.4%', top:'41.9%', label:'DevOps' },
-  // Sala ADM (bottom-left room)
-  'ceo':          { left:'16.6%', top:'76%',   label:'CEO' },
-  'luiz':         { left:'42%',   top:'75%',   label:'Luiz' },
+  // Row 1: chair centers at y≈136 → 25.0%. Desks north, face UP
+  'po':           { left:'15.6%', top:'25.0%', label:'PO' },
+  'data-analyst': { left:'37.9%', top:'25.0%', label:'Analista' },
+  'tech-lead':    { left:'67.2%', top:'25.0%', label:'TechLead' },
+  'dev-backend':  { left:'85.9%', top:'25.0%', label:'Backend' },
+  // Row 2: chair centers at y≈202 → 37.1%. Desks south, face DOWN
+  'dev-frontend': { left:'15.6%', top:'37.1%', label:'Frontend' },
+  'ux':           { left:'37.9%', top:'37.1%', label:'UX' },
+  'devops':       { left:'67.2%', top:'37.1%', label:'DevOps' },
+  // Sala ADM (bottom-left room, desks at ~y=410)
+  'ceo':          { left:'16.6%', top:'75.4%', label:'CEO' },
+  'luiz':         { left:'43%',   top:'73.5%', label:'Luiz' },
 };
 
 const ROOM_LABELS = [
   { left:'45%', top:'11%',  text:'Open Office',       bg:'rgba(168,85,247,.12)', color:'#c084fc', border:'rgba(168,85,247,.2)' },
   { left:'12%', top:'55%',  text:'Sala ADM',           bg:'rgba(96,165,250,.12)',  color:'#60a5fa', border:'rgba(96,165,250,.2)' },
-  { left:'70%', top:'65%',  text:'Sala de Reuniao',     bg:'rgba(251,191,36,.12)',  color:'#fbbf24', border:'rgba(251,191,36,.2)' },
+  { left:'78%', top:'78%',  text:'Sala de Reuniao',     bg:'rgba(251,191,36,.12)',  color:'#fbbf24', border:'rgba(251,191,36,.2)' },
 ];
 
 function renderOffice() {
