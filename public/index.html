@@ -784,30 +784,29 @@ let officeRendered = false;
 
 // Character sprite assignments (using idle_anim = 384x32, 24 frames, 6 per direction)
 // Directions: down=0, up=-96px, right=-192px, left=-288px (CSS background-position start)
-// Directions at 3x scale: down=0, up=-288px, right=-576px, left=-864px
-// Positions and directions provided by user via debug click tool
+// CORRECT direction mapping (verified from sprite): right=0, up=-288, down=-576, left=-864
 const CHAR_ASSIGN = {
   'po':           { sprite:'adam_anim',   sx:'-288px' },  // face UP
   'data-analyst': { sprite:'amelia_anim', sx:'-288px' },  // face UP
   'tech-lead':    { sprite:'alex_anim',   sx:'-288px' },  // face UP
   'dev-backend':  { sprite:'bob_anim',    sx:'-288px' },  // face UP
-  'dev-frontend': { sprite:'adam_anim',   sx:'0px'    },  // face DOWN
+  'dev-frontend': { sprite:'adam_anim',   sx:'-576px' },  // face DOWN
   'ux':           { sprite:'amelia_anim', sx:'-288px' },  // face UP
-  'devops':       { sprite:'bob_anim',    sx:'0px'    },  // face DOWN
-  'ceo':          { sprite:'alex_anim',   sx:'0px'    },  // face DOWN
-  'luiz':         { sprite:'bob_anim',    sx:'-576px' },  // face RIGHT (corrigido)
+  'devops':       { sprite:'bob_anim',    sx:'-576px' },  // face DOWN
+  'ceo':          { sprite:'alex_anim',   sx:'-576px' },  // face DOWN
+  'luiz':         { sprite:'bob_anim',    sx:'0px'    },  // face RIGHT
 };
 
 const OFFICE_POSITIONS = {
-  'po':           { left:'27.9%', top:'29%',   label:'PO' },
-  'data-analyst': { left:'46.7%', top:'29%',   label:'Analista' },
-  'tech-lead':    { left:'66%',   top:'28.5%', label:'TechLead' },
-  'dev-backend':  { left:'21.6%', top:'53%',   label:'Backend' },
-  'dev-frontend': { left:'21.7%', top:'36.8%', label:'Frontend' },
-  'ux':           { left:'40.4%', top:'53%',   label:'UX' },
-  'devops':       { left:'59.2%', top:'36.6%', label:'DevOps' },
-  'ceo':          { left:'47.1%', top:'69%',   label:'CEO' },
-  'luiz':         { left:'83.9%', top:'81%',   label:'Luiz' },
+  'po':           { left:'27.9%', top:'27%',   label:'PO' },
+  'data-analyst': { left:'46.7%', top:'27%',   label:'Analista' },
+  'tech-lead':    { left:'65%',   top:'26.5%', label:'TechLead' },
+  'dev-backend':  { left:'21.6%', top:'51%',   label:'Backend' },
+  'dev-frontend': { left:'21.7%', top:'34.8%', label:'Frontend' },
+  'ux':           { left:'40.4%', top:'51%',   label:'UX' },
+  'devops':       { left:'59.2%', top:'34.6%', label:'DevOps' },
+  'ceo':          { left:'47.1%', top:'67%',   label:'CEO' },
+  'luiz':         { left:'83.9%', top:'79%',   label:'Luiz' },
 };
 
 const ROOM_LABELS = [
