@@ -784,17 +784,19 @@ let officeRendered = false;
 
 // Character sprite assignments (using idle_anim = 384x32, 24 frames, 6 per direction)
 // Directions: down=0, up=-96px, right=-192px, left=-288px (CSS background-position start)
-// CORRECT direction mapping (verified from sprite): right=0, up=-288, down=-576, left=-864
+// PO/Analista/TechLead/Backend/UX = costas (sx:-288)
+// Frontend/DevOps/CEO = rosto, oposto (sx:0)
+// Luiz = costas como Frontend/DevOps estava (sx:-576)
 const CHAR_ASSIGN = {
-  'po':           { sprite:'adam_anim',   sx:'-288px' },  // face UP
-  'data-analyst': { sprite:'amelia_anim', sx:'-288px' },  // face UP
-  'tech-lead':    { sprite:'alex_anim',   sx:'-288px' },  // face UP
-  'dev-backend':  { sprite:'bob_anim',    sx:'-288px' },  // face UP
-  'dev-frontend': { sprite:'adam_anim',   sx:'-576px' },  // face DOWN
-  'ux':           { sprite:'amelia_anim', sx:'-288px' },  // face UP
-  'devops':       { sprite:'bob_anim',    sx:'-576px' },  // face DOWN
-  'ceo':          { sprite:'alex_anim',   sx:'-288px' },  // face UP (olhando pro monitor)
-  'luiz':         { sprite:'bob_anim',    sx:'-864px' },  // face LEFT (olhando pro monitor)
+  'po':           { sprite:'adam_anim',   sx:'-288px' },  // costas
+  'data-analyst': { sprite:'amelia_anim', sx:'-288px' },  // costas
+  'tech-lead':    { sprite:'alex_anim',   sx:'-288px' },  // costas
+  'dev-backend':  { sprite:'bob_anim',    sx:'-288px' },  // costas
+  'dev-frontend': { sprite:'adam_anim',   sx:'0px'    },  // rosto (oposto PO)
+  'ux':           { sprite:'amelia_anim', sx:'-288px' },  // costas
+  'devops':       { sprite:'bob_anim',    sx:'0px'    },  // rosto (oposto PO)
+  'ceo':          { sprite:'alex_anim',   sx:'0px'    },  // rosto (contrario Luiz)
+  'luiz':         { sprite:'bob_anim',    sx:'-576px' },  // costas (como FE/DO estava)
 };
 
 const OFFICE_POSITIONS = {
