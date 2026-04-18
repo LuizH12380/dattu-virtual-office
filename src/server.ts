@@ -44,6 +44,10 @@ async function main(): Promise<void> {
     res.json(orchestrator.getVaultStats());
   });
 
+  app.get('/api/kanban', (_req, res) => {
+    res.json(orchestrator.getKanban());
+  });
+
   app.get('/api/vault/notes/:folder', (req, res) => {
     const notes = obsidian.listNotes(req.params.folder).slice(0, 20).map((n) => ({
       path: n.path,
@@ -91,14 +95,13 @@ async function main(): Promise<void> {
 
     // Arestas via [[wikilinks]]
     const linksSet = new Set<string>();
-    const links: Array<{ source: string; target: string }> = [];
+    const links: Array<{ source: string; target: string; type: string }> = [];
     for (const { note } of allNotes) {
       const sourceId = note.filename.replace('.md', '');
       for (const rawLink of note.links) {
         const targetKey = rawLink.toLowerCase().trim();
         let targetId = noteMap.get(targetKey);
         if (!targetId) {
-          // fuzzy: procura por substring
           for (const [key, id] of noteMap.entries()) {
             if (key.includes(targetKey) || targetKey.includes(key)) {
               targetId = id;
@@ -110,8 +113,28 @@ async function main(): Promise<void> {
           const edgeKey = [sourceId, targetId].sort().join('↔');
           if (!linksSet.has(edgeKey)) {
             linksSet.add(edgeKey);
-            links.push({ source: sourceId, target: targetId });
+            links.push({ source: sourceId, target: targetId, type: 'wikilink' });
           }
+        }
+      }
+    }
+
+    // Arestas via pipelineId (notas do mesmo pipeline)
+    const pipelineGroups = new Map<string, string[]>();
+    for (const { note } of allNotes) {
+      const pid = note.frontmatter.pipelineId as string;
+      if (pid) {
+        const nodeId = note.filename.replace('.md', '');
+        if (!pipelineGroups.has(pid)) pipelineGroups.set(pid, []);
+        pipelineGroups.get(pid)!.push(nodeId);
+      }
+    }
+    for (const [, nodeIds] of pipelineGroups) {
+      for (let i = 0; i < nodeIds.length - 1; i++) {
+        const edgeKey = [nodeIds[i], nodeIds[i + 1]].sort().join('↔p');
+        if (!linksSet.has(edgeKey)) {
+          linksSet.add(edgeKey);
+          links.push({ source: nodeIds[i], target: nodeIds[i + 1], type: 'pipeline' });
         }
       }
     }
@@ -247,6 +270,7 @@ async function main(): Promise<void> {
   orchestrator.on('agent:rejected',   (d) => io.emit('agent:rejected', d));
   orchestrator.on('note:created',     (d) => io.emit('note:created', d));
   orchestrator.on('vault:stats',      (d) => io.emit('vault:stats', d));
+  orchestrator.on('kanban:update',    (d) => io.emit('kanban:update', d));
 
   httpServer.listen(PORT, () => {
     console.log(`\n╔══════════════════════════════════════════════╗`);

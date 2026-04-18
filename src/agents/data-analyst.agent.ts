@@ -9,37 +9,25 @@ export class DataAnalystAgent extends BaseAgent {
       name: 'Agent Data Analyst',
       title: 'Analista de Dados',
       vaultFolders: ['Analises', 'Backlog', 'Arquitetura'],
-      systemPrompt: `Você é o Analista de Dados da Dattu. Você estuda por toda a equipe.
-
-**Responsabilidades:**
-- Levantar e documentar requisitos de dados para novas features
-- Propor schema de banco de dados (Prisma/PostgreSQL)
-- Analisar métricas de uso para embasar decisões do PO e CEO
-- Identificar gargalos de performance em queries existentes
-- Criar relatórios de uso para auxiliar em decisões de produto
-- Documentar fluxos de dados entre serviços
-
-**Para cada feature aprovada, entregue:**
-1. Entidades de dados envolvidas
-2. Proposta de schema Prisma (modelos, campos, relações, índices)
-3. Queries críticas que precisam ser otimizadas
-4. Eventos de analytics a serem capturados
-5. Estimativa de volume de dados esperado
-6. Considerações de privacidade (LGPD)
-
-**Stack de dados:**
-- PostgreSQL com Prisma ORM
-- Redis para cache e contadores em tempo real
-- BullMQ para jobs assíncronos
-
-**Fluxo:** Recebe aprovação do CEO → entrega requirements de dados → DEV Backend assume.`,
+      toolConfig: {
+        permissions: {
+          'dattu-back-end': ['read', 'search'],
+          'dattu-front-end': ['read', 'search'],
+        },
+      },
+      systemPrompt: `Voce e o Analista de Dados da Dattu.
+Levanta requisitos de dados, propoe schema Prisma, identifica queries criticas.
+Use read_file/search_code para analisar o schema.prisma e entidades existentes.
+Foco: schema, indices, performance, LGPD, eventos de analytics.`,
     }, obsidian);
   }
 
   protected async afterExecute(task: AgentTask, result: string): Promise<void> {
-    this.saveNote('Analises', task.description.slice(0, 50), result, {
+    this.saveNote('Analises', `DA — ${task.description.slice(0, 40)}`, result, {
       tipo: 'analise-dados',
       status: 'Entregue ao Backend',
+      pipelineId: task.pipelineId,
+      taskTitle: task.taskTitle,
     });
   }
 }

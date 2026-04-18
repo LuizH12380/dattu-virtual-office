@@ -115,7 +115,7 @@ export class ObsidianService {
 
   // ─── Context builder ──────────────────────────────────────────────────────
 
-  buildContextSummary(folders: string[], limit = 3): string {
+  buildContextSummary(folders: string[], limit = 2): string {
     const parts: string[] = [];
 
     for (const folder of folders) {
@@ -124,7 +124,7 @@ export class ObsidianService {
 
       parts.push(`\n### ${folder}`);
       for (const note of notes) {
-        const preview = note.content.replace(/^---[\s\S]*?---\n/, '').slice(0, 400).trim();
+        const preview = note.content.replace(/^---[\s\S]*?---\n/, '').slice(0, 200).trim();
         parts.push(`**[[${note.filename.replace('.md', '')}]]**\n${preview}...`);
       }
     }

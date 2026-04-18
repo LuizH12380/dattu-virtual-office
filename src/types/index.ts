@@ -57,12 +57,20 @@ export interface AgentTask {
   status: TaskStatus;
   assignedTo: AgentRole;
   pipelineId?: string;
-  previousOutput?: string;    // output do agente anterior no pipeline
+  taskTitle?: string;           // titulo original da tarefa (para kanban/vault)
+  previousOutput?: string;      // output do agente anterior no pipeline
   context?: Record<string, unknown>;
   result?: string;
   vaultNotesCreated?: string[];
   createdAt: string;
   completedAt?: string;
+}
+
+export type ToolPermission = 'read' | 'write' | 'search';
+export type ProjectName = 'dattu-back-end' | 'dattu-front-end';
+
+export interface AgentToolConfig {
+  permissions: Record<ProjectName, ToolPermission[]>;
 }
 
 export interface AgentDecision {

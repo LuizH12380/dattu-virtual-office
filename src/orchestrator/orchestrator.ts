@@ -31,6 +31,7 @@ export class Orchestrator extends EventEmitter {
   private readonly obsidian: ObsidianService;
   private readonly agents: Map<AgentRole, BaseAgent> = new Map();
   private readonly model: string;
+  private readonly kanban: Map<string, PipelineRun> = new Map();
 
   constructor(obsidian: ObsidianService) {
     super();
@@ -70,7 +71,9 @@ export class Orchestrator extends EventEmitter {
     let previousOutput = request.context ?? '';
     let currentAgentRole: AgentRole | undefined = pipeline.currentStage;
 
+    this.kanban.set(taskId, pipeline);
     this.emit('pipeline:start', { taskId, pipeline });
+    this.emit('kanban:update', { pipelines: [...this.kanban.values()] });
     this.emit('task:start', { taskId, task: request.task, priority: request.priority ?? 'medium' });
 
     while (currentAgentRole) {
@@ -99,6 +102,7 @@ export class Orchestrator extends EventEmitter {
         status: 'in_progress',
         assignedTo: currentAgentRole,
         pipelineId: taskId,
+        taskTitle: request.task,
         previousOutput,
         context: request.context ? { description: request.context } : undefined,
         createdAt: new Date().toISOString(),
@@ -244,6 +248,11 @@ export class Orchestrator extends EventEmitter {
         stage.completedAt = new Date().toISOString();
       }
     }
+    this.emit('kanban:update', { pipelines: [...this.kanban.values()] });
+  }
+
+  getKanban(): PipelineRun[] {
+    return [...this.kanban.values()];
   }
 
   // ─── Chat direto com agente ───────────────────────────────────────────────

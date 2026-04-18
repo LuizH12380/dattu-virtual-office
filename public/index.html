@@ -185,6 +185,7 @@
         <!-- Tab bar -->
         <div class="flex items-center gap-1 px-6 pt-3 bg-base-100 border-b border-base-300 flex-shrink-0">
           <button class="tab tab-bordered tab-active text-sm font-semibold" id="tabBtnDash" onclick="switchTab('dashboard')">📊 Dashboard</button>
+          <button class="tab tab-bordered text-sm font-semibold" id="tabBtnKanban" onclick="switchTab('kanban')">📋 Kanban</button>
           <button class="tab tab-bordered text-sm font-semibold" id="tabBtnOffice" onclick="switchTab('office')">🏢 Escritorio</button>
         </div>
 
@@ -216,7 +217,14 @@
           </div>
         </div>
 
-        <!-- TAB 2: Escritorio Virtual -->
+        <!-- TAB 2: Kanban -->
+        <div class="flex-1 overflow-auto hidden p-4 bg-base-100" id="tabKanban">
+          <div class="flex gap-3 min-w-max pb-4" id="kanbanBoard">
+            <!-- Columns rendered by JS -->
+          </div>
+        </div>
+
+        <!-- TAB 3: Escritorio Virtual -->
         <div class="flex-1 overflow-auto hidden flex-col items-center p-4 bg-[#0a0612]" id="tabOffice">
           <div class="flex items-center justify-between w-full max-w-4xl mb-3 px-1">
             <h2 class="text-sm font-semibold opacity-60">Escritorio Virtual — Dattu Core Team</h2>
@@ -715,7 +723,7 @@ function renderGraph() {
     .nodeLabel(n=>`${n.label} · ${n.group}${n.agente?' · '+n.agente:''}`)
     .nodeColor(n=>GRAPH_COLORS[n.group]||'#94a3b8')
     .nodeVal(n=>{const lc=data.links.filter(l=>{const s=typeof l.source==='object'?l.source.id:l.source;const t=typeof l.target==='object'?l.target.id:l.target;return s===n.id||t===n.id;}).length;return 4+lc*2;})
-    .nodeRelSize(5).linkColor(()=>'rgba(168,85,247,0.2)').linkWidth(1)
+    .nodeRelSize(5).linkColor(l=>l.type==='pipeline'?'rgba(251,191,36,0.35)':'rgba(168,85,247,0.2)').linkWidth(l=>l.type==='pipeline'?2:1)
     .linkDirectionalArrowLength(4).linkDirectionalArrowRelPos(1)
     .backgroundColor('#0f0a1a')
     .onNodeClick(node=>openNotePanel(node)).onBackgroundClick(()=>closeNotePanel())
@@ -765,18 +773,25 @@ async function openNotePanel(node) {
 
 // ═══ Tabs ═══
 function switchTab(tab) {
-  const dash = document.getElementById('tabDashboard');
-  const ofc = document.getElementById('tabOffice');
-  const btnD = document.getElementById('tabBtnDash');
-  const btnO = document.getElementById('tabBtnOffice');
-  if (tab === 'office') {
-    dash.classList.add('hidden'); ofc.classList.remove('hidden'); ofc.classList.add('flex');
-    btnD.classList.remove('tab-active'); btnO.classList.add('tab-active');
-    if (!officeRendered) renderOffice();
-  } else {
-    ofc.classList.add('hidden'); ofc.classList.remove('flex'); dash.classList.remove('hidden');
-    btnO.classList.remove('tab-active'); btnD.classList.add('tab-active');
+  const panels = { dashboard: 'tabDashboard', kanban: 'tabKanban', office: 'tabOffice' };
+  const btns = { dashboard: 'tabBtnDash', kanban: 'tabBtnKanban', office: 'tabBtnOffice' };
+  // Hide all
+  for (const id of Object.values(panels)) {
+    const el = document.getElementById(id);
+    if (el) { el.classList.add('hidden'); el.classList.remove('flex'); }
   }
+  for (const id of Object.values(btns)) {
+    const el = document.getElementById(id);
+    if (el) el.classList.remove('tab-active');
+  }
+  // Show selected
+  const panel = document.getElementById(panels[tab]);
+  const btn = document.getElementById(btns[tab]);
+  if (panel) { panel.classList.remove('hidden'); if (tab === 'office') panel.classList.add('flex'); }
+  if (btn) btn.classList.add('tab-active');
+  // Lazy render
+  if (tab === 'office' && !officeRendered) renderOffice();
+  if (tab === 'kanban') renderKanban();
 }
 
 // ═══ Office Renderer ═══
@@ -858,6 +873,135 @@ function setOfficeStatus(role, status) {
   const marker = document.getElementById(`ofc-marker-${role}`);
   if (marker) marker.dataset.status = status;
 }
+
+// ═══ Kanban ═══
+const KANBAN_COLS = [
+  { id:'backlog', label:'Backlog', color:'#94a3b8' },
+  { id:'po', label:'PO', color:'#0ea5e9' },
+  { id:'ceo', label:'CEO', color:'#475569' },
+  { id:'data-analyst', label:'Analista', color:'#a855f7' },
+  { id:'dev-backend', label:'Backend', color:'#374151' },
+  { id:'dev-frontend', label:'Frontend', color:'#ec4899' },
+  { id:'ux', label:'UX', color:'#f59e0b' },
+  { id:'tech-lead', label:'TechLead', color:'#059669' },
+  { id:'devops', label:'DevOps', color:'#ef4444' },
+  { id:'done', label:'Done', color:'#34d399' },
+];
+
+let kanbanData = [];
+
+async function renderKanban() {
+  try {
+    const res = await fetch('/api/kanban');
+    kanbanData = await res.json();
+  } catch(e) { /* use cached */ }
+  const board = document.getElementById('kanbanBoard');
+  if (!board) return;
+  board.innerHTML = '';
+
+  for (const col of KANBAN_COLS) {
+    const colEl = document.createElement('div');
+    colEl.className = 'flex flex-col w-56 flex-shrink-0';
+
+    // Header
+    const hdr = document.createElement('div');
+    hdr.className = 'flex items-center gap-2 mb-2 px-2';
+    hdr.innerHTML = `<div class="w-2 h-2 rounded-full" style="background:${col.color}"></div>
+      <span class="text-xs font-semibold opacity-70">${col.label}</span>
+      <span class="badge badge-ghost badge-xs ml-auto" id="kanban-count-${col.id}">0</span>`;
+    colEl.appendChild(hdr);
+
+    // Cards container
+    const cards = document.createElement('div');
+    cards.className = 'flex-1 bg-base-200/50 rounded-xl p-2 space-y-2 min-h-[200px] border border-base-300/50';
+    cards.id = `kanban-col-${col.id}`;
+    colEl.appendChild(cards);
+    board.appendChild(colEl);
+  }
+
+  updateKanbanCards();
+}
+
+function updateKanbanCards() {
+  // Clear all columns
+  for (const col of KANBAN_COLS) {
+    const container = document.getElementById(`kanban-col-${col.id}`);
+    if (container) container.innerHTML = '';
+    const count = document.getElementById(`kanban-count-${col.id}`);
+    if (count) count.textContent = '0';
+  }
+
+  for (const pipeline of kanbanData) {
+    // Find current column based on stage status
+    let currentCol = 'done';
+    for (const stage of pipeline.stages) {
+      if (stage.status === 'active') { currentCol = stage.agent; break; }
+      if (stage.status === 'pending') { currentCol = stage.agent; break; }
+    }
+    if (pipeline.completedAt) currentCol = 'done';
+
+    const container = document.getElementById(`kanban-col-${currentCol}`);
+    if (!container) continue;
+
+    const card = document.createElement('div');
+    card.className = 'bg-base-100 rounded-lg p-3 border border-base-300/60 hover:border-primary/30 transition-colors cursor-pointer';
+    card.onclick = () => showKanbanDetail(pipeline);
+
+    const priBadge = { low:'badge-ghost', medium:'badge-info', high:'badge-warning', urgent:'badge-error' };
+    const doneCount = pipeline.stages.filter(s => s.status === 'done').length;
+    const totalCount = pipeline.stages.length;
+
+    card.innerHTML = `
+      <p class="text-sm font-medium mb-2 leading-snug">${esc(pipeline.title).slice(0,60)}</p>
+      <div class="flex items-center justify-between">
+        <span class="badge ${priBadge[pipeline.priority]||'badge-ghost'} badge-xs">${pipeline.priority}</span>
+        <span class="text-[10px] opacity-40">${doneCount}/${totalCount}</span>
+      </div>
+      <progress class="progress progress-primary w-full h-1 mt-2" value="${doneCount}" max="${totalCount}"></progress>
+    `;
+    container.appendChild(card);
+
+    // Update count
+    const count = document.getElementById(`kanban-count-${currentCol}`);
+    if (count) count.textContent = String(Number(count.textContent) + 1);
+  }
+}
+
+function showKanbanDetail(pipeline) {
+  const modal = document.createElement('dialog');
+  modal.className = 'modal modal-open';
+
+  let stagesHtml = '';
+  for (const stage of pipeline.stages) {
+    const statusCls = { done:'badge-success', active:'badge-warning', rejected:'badge-error', pending:'badge-ghost' };
+    const output = stage.output ? `<pre class="text-xs bg-base-300/50 p-2 rounded mt-1 max-h-32 overflow-auto whitespace-pre-wrap">${esc(stage.output).slice(0,500)}</pre>` : '';
+    stagesHtml += `
+      <div class="border-b border-base-300/50 pb-2 mb-2">
+        <div class="flex items-center gap-2">
+          <span class="badge ${statusCls[stage.status]||'badge-ghost'} badge-xs">${stage.status}</span>
+          <span class="text-xs font-semibold">${AG[stage.agent]?.name || stage.agent}</span>
+          ${stage.completedAt ? `<span class="text-[10px] opacity-30 ml-auto">${new Date(stage.completedAt).toLocaleTimeString('pt-BR')}</span>` : ''}
+        </div>
+        ${output}
+      </div>`;
+  }
+
+  modal.innerHTML = `
+    <div class="modal-box max-w-2xl max-h-[80vh]">
+      <h3 class="font-bold text-base mb-1">${esc(pipeline.title)}</h3>
+      <p class="text-xs opacity-50 mb-4">Pipeline ${pipeline.id.slice(0,8)} — ${pipeline.priority}</p>
+      <div class="overflow-y-auto max-h-[60vh]">${stagesHtml}</div>
+      <div class="modal-action"><button class="btn btn-sm" onclick="this.closest('dialog').remove()">Fechar</button></div>
+    </div>
+    <form method="dialog" class="modal-backdrop"><button onclick="this.closest('dialog').remove()">close</button></form>`;
+  document.body.appendChild(modal);
+}
+
+// Socket update
+socket.on('kanban:update', d => {
+  kanbanData = d.pipelines || [];
+  if (!document.getElementById('tabKanban')?.classList.contains('hidden')) updateKanbanCards();
+});
 
 // ═══ Init ═══
 document.addEventListener('DOMContentLoaded', () => {
