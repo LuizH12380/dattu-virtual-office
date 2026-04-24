@@ -8,7 +8,7 @@ import { ObsidianService } from './obsidian/obsidian.service';
 import { Orchestrator } from './orchestrator/orchestrator';
 import { AgentRole } from './types';
 
-const PORT = Number(process.env.PORT ?? 3001);
+const PORT = Number(process.env.PORT ?? 3050);
 
 function validateEnv(): void {
   if (!process.env.ANTHROPIC_API_KEY) {
