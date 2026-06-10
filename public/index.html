@@ -324,8 +324,10 @@ const AG = {
   'dev-backend':  { name:'Backend',  role:'DEV Backend Senior',  color:'#374151', emoji:'⚙️', label:'Backend' },
   'dev-frontend': { name:'Frontend', role:'DEV Frontend Senior', color:'#ec4899', emoji:'🎨', label:'Frontend' },
   'ux':           { name:'UX',       role:'UX Designer',         color:'#f59e0b', emoji:'✏️', label:'UX' },
+  'revisor':      { name:'Revisor',  role:'Revisor de Código',   color:'#14b8a6', emoji:'🔎', label:'Revisor' },
   'tech-lead':    { name:'TechLead', role:'Tech Lead',           color:'#059669', emoji:'🔍', label:'TechLead' },
   'devops':       { name:'DevOps',   role:'DevOps Engineer',     color:'#ef4444', emoji:'🚀', label:'DevOps' },
+  'documentador': { name:'Docs',     role:'Documentador',        color:'#8b5cf6', emoji:'📝', label:'Docs' },
 };
 
 const VAULT_META = {
@@ -334,7 +336,7 @@ const VAULT_META = {
   Arquitetura:{ e:'🏗️', l:'Arquitetura' }, Deploy:{ e:'🚀', l:'Deploy' },
 };
 
-const PIPELINE_ROLES = ['po','ceo','data-analyst','dev-backend','dev-frontend','ux','tech-lead','devops'];
+const PIPELINE_ROLES = ['po','ceo','data-analyst','dev-backend','dev-frontend','ux','revisor','tech-lead','devops','documentador'];
 
 // ═══ State ═══
 let states = {};
@@ -811,6 +813,8 @@ const CHAR_ASSIGN = {
   'ux':           { sprite:'amelia_anim', sx:'-288px' },  // costas
   'devops':       { sprite:'bob_anim',    sx:'-864px' },  // face DOWN (rosto)
   'ceo':          { sprite:'alex_anim',   sx:'0px'    },  // rosto (contrario Luiz)
+  'revisor':      { sprite:'alex_anim',   sx:'-864px' },  // face DOWN (rosto)
+  'documentador': { sprite:'amelia_anim', sx:'0px'    },  // rosto
   'luiz':         { sprite:'bob_anim',    sx:'-576px' },  // costas (como FE/DO estava)
 };
 
@@ -823,6 +827,8 @@ const OFFICE_POSITIONS = {
   'ux':           { left:'40.4%', top:'51%',   label:'UX' },
   'devops':       { left:'59.2%', top:'34.6%', label:'DevOps' },
   'ceo':          { left:'47.1%', top:'67%',   label:'CEO' },
+  'revisor':      { left:'78.5%', top:'27%',   label:'Revisor' },
+  'documentador': { left:'72%',   top:'51%',   label:'Docs' },
   'luiz':         { left:'83.9%', top:'79%',   label:'Luiz' },
 };
 
@@ -883,8 +889,10 @@ const KANBAN_COLS = [
   { id:'dev-backend', label:'Backend', color:'#374151' },
   { id:'dev-frontend', label:'Frontend', color:'#ec4899' },
   { id:'ux', label:'UX', color:'#f59e0b' },
+  { id:'revisor', label:'Revisor', color:'#14b8a6' },
   { id:'tech-lead', label:'TechLead', color:'#059669' },
   { id:'devops', label:'DevOps', color:'#ef4444' },
+  { id:'documentador', label:'Docs', color:'#8b5cf6' },
   { id:'done', label:'Done', color:'#34d399' },
 ];
 

@@ -3,23 +3,17 @@ import express from 'express';
 import { createServer } from 'http';
 import { Server as SocketIO } from 'socket.io';
 import * as path from 'path';
-import Anthropic from '@anthropic-ai/sdk';
 import { ObsidianService } from './obsidian/obsidian.service';
 import { Orchestrator } from './orchestrator/orchestrator';
+import { LlmMessage } from './llm/claude-code.client';
 import { AgentRole } from './types';
 
 const PORT = Number(process.env.PORT ?? 3050);
 
-function validateEnv(): void {
-  if (!process.env.ANTHROPIC_API_KEY) {
-    console.error('[ERRO] ANTHROPIC_API_KEY não configurada no .env');
-    process.exit(1);
-  }
-}
+// Cérebro = Claude Code headless (coberto pela assinatura), não a API paga.
+// Não há mais ANTHROPIC_API_KEY a validar.
 
 async function main(): Promise<void> {
-  validateEnv();
-
   const app = express();
   const httpServer = createServer(app);
   const io = new SocketIO(httpServer, { cors: { origin: '*' } });
@@ -193,7 +187,7 @@ async function main(): Promise<void> {
 
   // ─── Socket.IO ────────────────────────────────────────────────────────────
 
-  const chatHistories = new Map<string, Anthropic.MessageParam[]>();
+  const chatHistories = new Map<string, LlmMessage[]>();
 
   io.on('connection', (socket) => {
     socket.emit('vault:stats', orchestrator.getVaultStats());

@@ -1,7 +1,7 @@
-import Anthropic from '@anthropic-ai/sdk';
 import { EventEmitter } from 'events';
 import { v4 as uuidv4 } from 'uuid';
 import { ObsidianService } from '../obsidian/obsidian.service';
+import { LlmMessage } from '../llm/claude-code.client';
 import { POAgent } from '../agents/po.agent';
 import { CEOAgent } from '../agents/ceo.agent';
 import { TechLeadAgent } from '../agents/tech-lead.agent';
@@ -10,6 +10,8 @@ import { DevFrontendAgent } from '../agents/dev-frontend.agent';
 import { UXAgent } from '../agents/ux.agent';
 import { DevOpsAgent } from '../agents/devops.agent';
 import { DataAnalystAgent } from '../agents/data-analyst.agent';
+import { RevisorAgent } from '../agents/revisor.agent';
+import { DocumentadorAgent } from '../agents/documentador.agent';
 import { BaseAgent } from '../agents/base.agent';
 import {
   AgentRole,
@@ -27,17 +29,13 @@ import {
 } from '../workflow/pipeline';
 
 export class Orchestrator extends EventEmitter {
-  private readonly client: Anthropic;
   private readonly obsidian: ObsidianService;
   private readonly agents: Map<AgentRole, BaseAgent> = new Map();
-  private readonly model: string;
   private readonly kanban: Map<string, PipelineRun> = new Map();
 
   constructor(obsidian: ObsidianService) {
     super();
-    this.client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
     this.obsidian = obsidian;
-    this.model = process.env.CLAUDE_MODEL || 'claude-sonnet-4-6';
 
     this.agents.set('po', new POAgent(obsidian));
     this.agents.set('ceo', new CEOAgent(obsidian));
@@ -45,8 +43,10 @@ export class Orchestrator extends EventEmitter {
     this.agents.set('dev-backend', new DevBackendAgent(obsidian));
     this.agents.set('dev-frontend', new DevFrontendAgent(obsidian));
     this.agents.set('ux', new UXAgent(obsidian));
+    this.agents.set('revisor', new RevisorAgent(obsidian));
     this.agents.set('tech-lead', new TechLeadAgent(obsidian));
     this.agents.set('devops', new DevOpsAgent(obsidian));
+    this.agents.set('documentador', new DocumentadorAgent(obsidian));
   }
 
   // ─── Ponto de entrada principal ───────────────────────────────────────────
@@ -257,7 +257,7 @@ export class Orchestrator extends EventEmitter {
 
   // ─── Chat direto com agente ───────────────────────────────────────────────
 
-  async chatWithAgent(role: AgentRole, message: string, history: Anthropic.MessageParam[] = []): Promise<string> {
+  async chatWithAgent(role: AgentRole, message: string, history: LlmMessage[] = []): Promise<string> {
     const agent = this.agents.get(role);
     if (!agent) throw new Error(`Agente "${role}" não encontrado`);
 

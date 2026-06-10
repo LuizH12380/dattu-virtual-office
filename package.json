@@ -8,6 +8,7 @@
     "start": "node dist/index.js",
     "dev": "ts-node src/index.ts",
     "web": "ts-node src/server.ts",
+    "web:publico": "node scripts/tunnel.js",
     "office": "ts-node src/index.ts",
     "meeting": "ts-node src/index.ts --task meeting",
     "hire": "ts-node src/index.ts --task hire",
@@ -15,7 +16,6 @@
     "decision": "ts-node src/index.ts --task decision"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.39.0",
     "@types/express": "^5.0.6",
     "chalk": "^5.3.0",
     "dotenv": "^16.4.5",

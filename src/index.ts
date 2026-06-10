@@ -1,19 +1,11 @@
 import 'dotenv/config';
 import * as readline from 'readline';
-import Anthropic from '@anthropic-ai/sdk';
 import { ObsidianService } from './obsidian/obsidian.service';
 import { Orchestrator } from './orchestrator/orchestrator';
+import { LlmMessage } from './llm/claude-code.client';
 import { AgentRole, OrchestratorRequest } from './types';
 
-// ─── Validação de ambiente ─────────────────────────────────────────────────
-
-function validateEnv(): void {
-  if (!process.env.ANTHROPIC_API_KEY) {
-    console.error('\n[ERRO] ANTHROPIC_API_KEY não configurada.');
-    console.error('Copie .env.example para .env e adicione sua chave.\n');
-    process.exit(1);
-  }
-}
+// Cérebro = Claude Code headless (assinatura). Sem API key a validar.
 
 // ─── UI helpers ────────────────────────────────────────────────────────────
 
@@ -73,7 +65,7 @@ async function startREPL(orchestrator: Orchestrator, obsidian: ObsidianService):
     prompt: '\n[Escritório] ',
   });
 
-  const chatHistories = new Map<AgentRole, Anthropic.MessageParam[]>();
+  const chatHistories = new Map<AgentRole, LlmMessage[]>();
   let chatMode: AgentRole | null = null;
 
   printHelp();
@@ -209,7 +201,6 @@ async function runBatch(orchestrator: Orchestrator, task: string): Promise<void>
 // ─── Main ──────────────────────────────────────────────────────────────────
 
 async function main(): Promise<void> {
-  validateEnv();
   printBanner();
 
   const obsidian = new ObsidianService();

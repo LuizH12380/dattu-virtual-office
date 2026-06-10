@@ -48,11 +48,18 @@ export const DATTU_PIPELINE: WorkflowStage[] = [
     label: 'Review de UX',
     vaultFolder: 'Design',
     canApprove: false,
+    next: 'revisor',
+  },
+  {
+    agent: 'revisor',
+    label: 'Revisão de Código',
+    vaultFolder: 'Reviews',
+    canApprove: false,
     next: 'tech-lead',
   },
   {
     agent: 'tech-lead',
-    label: 'Code Review',
+    label: 'Aval Técnico Final',
     vaultFolder: 'Reviews',
     canApprove: true,
     rejectBackTo: 'dev-backend',
@@ -62,6 +69,13 @@ export const DATTU_PIPELINE: WorkflowStage[] = [
     agent: 'devops',
     label: 'Deploy & Infraestrutura',
     vaultFolder: 'Deploy',
+    canApprove: false,
+    next: 'documentador',
+  },
+  {
+    agent: 'documentador',
+    label: 'Documentação',
+    vaultFolder: 'Decisoes',
     canApprove: false,
     next: undefined, // fim do pipeline
   },

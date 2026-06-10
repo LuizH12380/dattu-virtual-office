@@ -6,7 +6,9 @@ export type AgentRole =
   | 'dev-frontend'
   | 'ux'
   | 'devops'
-  | 'data-analyst';
+  | 'data-analyst'
+  | 'revisor'
+  | 'documentador';
 
 export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent';
 export type TaskStatus = 'pending' | 'in_progress' | 'completed' | 'failed' | 'rejected';
