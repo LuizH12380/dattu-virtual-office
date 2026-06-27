@@ -82,8 +82,8 @@ function runClaude(systemPrompt: string, userPrompt: string): Promise<string> {
       { cwd: DATTU_ROOT, shell: process.platform === 'win32' },
     );
 
-    let stdout = '';
-    let stderr = '';
+    const stdoutChunks: Buffer[] = [];
+    const stderrChunks: Buffer[] = [];
     let finished = false;
 
     const timer = setTimeout(() => {
@@ -98,8 +98,11 @@ function runClaude(systemPrompt: string, userPrompt: string): Promise<string> {
     child.stdin.write(userPrompt);
     child.stdin.end();
 
-    child.stdout.on('data', (d) => { stdout += d.toString(); });
-    child.stderr.on('data', (d) => { stderr += d.toString(); });
+    // Acumula os chunks como Buffer e só decodifica como UTF-8 no fim. Decodificar
+    // por chunk (d.toString()) corrompe caracteres multibyte (—, acentos, emojis)
+    // quando o stream os parte entre dois chunks — origem do mojibake nas notas.
+    child.stdout.on('data', (d: Buffer) => { stdoutChunks.push(d); });
+    child.stderr.on('data', (d: Buffer) => { stderrChunks.push(d); });
 
     child.on('error', (err) => {
       if (finished) return;
@@ -114,6 +117,9 @@ function runClaude(systemPrompt: string, userPrompt: string): Promise<string> {
       finished = true;
       clearTimeout(timer);
       cleanup();
+
+      const stdout = Buffer.concat(stdoutChunks).toString('utf-8');
+      const stderr = Buffer.concat(stderrChunks).toString('utf-8');
 
       if (code !== 0) {
         reject(new Error(`claude -p saiu com código ${code}: ${stderr.slice(0, 500)}`));
